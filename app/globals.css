@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Visible focus ring for keyboard users — brand-tinted */
+:focus-visible {
+  outline: 2px solid #4f7263;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
