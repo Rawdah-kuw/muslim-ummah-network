@@ -1,13 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, PenLine, Download, FileText, Library as LibraryIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, PenLine, Download, FileText, X, ExternalLink, Library as LibraryIcon } from "lucide-react";
 import SectionHead from "./SectionHead";
 import { BOOKS, CATS } from "@/lib/data";
 
 export default function Library({ t, lang }) {
   const [cat, setCat] = useState("all");
+  const [viewer, setViewer] = useState(null); // { url, title }
   const books = cat === "all" ? BOOKS : BOOKS.filter((b) => b.cat === cat);
+
+  // Lock background scroll + close on Escape while the reader is open
+  useEffect(() => {
+    if (!viewer) return;
+    const onKey = (e) => e.key === "Escape" && setViewer(null);
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [viewer]);
+
+  const open = (url, title) => setViewer({ url, title });
 
   return (
     <section id="library" className="py-16 md:py-24 bg-pearl-50 scroll-mt-24">
@@ -51,23 +66,43 @@ export default function Library({ t, lang }) {
                 </span>
                 <span dir="ltr">{b.size}</span>
               </div>
+
               {b.bilingual ? (
-                <div className="flex gap-2">
-                  <a href={b.fileAr} download
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors">
-                    <Download size={15} /> {t.dlAr}
-                  </a>
-                  <a href={b.fileEn} download
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100 transition-colors">
-                    <Download size={15} /> {t.dlEn}
-                  </a>
-                </div>
+                <>
+                  <div className="flex gap-2">
+                    <button onClick={() => open(b.fileAr, b.title[lang])}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-white bg-sage-600 hover:bg-sage-700 transition-colors">
+                      <BookOpen size={15} /> {t.dlAr}
+                    </button>
+                    <button onClick={() => open(b.fileEn, b.title[lang])}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors">
+                      <BookOpen size={15} /> {t.dlEn}
+                    </button>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <a href={b.fileAr} download
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-slate-500 bg-pearl-100 hover:bg-pearl-200 transition-colors">
+                      <Download size={13} /> {t.dlAr}
+                    </a>
+                    <a href={b.fileEn} download
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-slate-500 bg-pearl-100 hover:bg-pearl-200 transition-colors">
+                      <Download size={13} /> {t.dlEn}
+                    </a>
+                  </div>
+                </>
               ) : (
-                <a href={b.fileAr} download
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors">
-                  <Download size={16} /> {t.dlPdf}
-                </a>
+                <>
+                  <button onClick={() => open(b.fileAr, b.title[lang])}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-white bg-sage-600 hover:bg-sage-700 transition-colors">
+                    <BookOpen size={16} /> {t.readBook}
+                  </button>
+                  <a href={b.fileAr} download
+                    className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-slate-500 bg-pearl-100 hover:bg-pearl-200 transition-colors">
+                    <Download size={13} /> {t.dlPdf}
+                  </a>
+                </>
               )}
+
               {b.extra && (
                 <a href={b.extraFile} download
                   className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-700 bg-pearl-100 transition-colors">
@@ -78,6 +113,35 @@ export default function Library({ t, lang }) {
           ))}
         </div>
       </div>
+
+      {/* In-site PDF reader */}
+      {viewer && (
+        <div onClick={() => setViewer(null)}
+          className="fixed inset-0 z-50 bg-pine-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+          role="dialog" aria-modal="true">
+          <div onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-pine-lg w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-pearl-200">
+              <h3 className="font-bold text-ink truncate">{viewer.title}</h3>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a href={viewer.url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-sage-600 hover:bg-sage-100 transition-colors">
+                  <ExternalLink size={14} /> <span className="hidden sm:inline">{t.openNewTab}</span>
+                </a>
+                <a href={viewer.url} download
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-sage-600 hover:bg-sage-100 transition-colors">
+                  <Download size={14} /> <span className="hidden sm:inline">{t.download}</span>
+                </a>
+                <button onClick={() => setViewer(null)} aria-label={t.closeViewer}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-pearl-100 transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <iframe src={viewer.url} title={viewer.title} className="flex-1 w-full bg-pearl-100" />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
