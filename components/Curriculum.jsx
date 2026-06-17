@@ -5,14 +5,23 @@ import { GraduationCap, PlayCircle, ArrowUpLeft, ArrowUpRight, ShieldCheck } fro
 import SectionHead from "./SectionHead";
 import { PLAYLISTS, PL_CATS, PL_LEVELS, PL_CHANNELS } from "@/lib/curriculum";
 
+const LEVEL_STYLE = {
+  1: "bg-sage-100 text-sage-700",
+  2: "bg-pearl-200 text-pine-800",
+  3: "bg-pine-800 text-white",
+};
+
 export default function Curriculum({ t, lang, rtl }) {
   const [cat, setCat] = useState("all");
   const Arrow = rtl ? ArrowUpLeft : ArrowUpRight;
 
-  const list = cat === "all" ? PLAYLISTS : PLAYLISTS.filter((p) => p.sci === cat);
-  // group by level (1,2,3) and keep only levels that have items
-  const levels = [1, 2, 3]
-    .map((lvl) => ({ lvl, items: list.filter((p) => p.level === lvl) }))
+  // Sciences to show (in curriculum order), each with its playlists sorted beginner → advanced
+  const sciences = PL_CATS.filter((c) => c.key !== "all")
+    .filter((c) => cat === "all" || c.key === cat)
+    .map((c) => ({
+      cat: c,
+      items: PLAYLISTS.filter((p) => p.sci === c.key).sort((a, b) => a.level - b.level),
+    }))
     .filter((g) => g.items.length);
 
   return (
@@ -25,7 +34,7 @@ export default function Curriculum({ t, lang, rtl }) {
         </div>
 
         {/* Science filters */}
-        <div className="flex flex-wrap gap-2 mb-10" role="tablist" aria-label={t.pathTitle}>
+        <div className="flex flex-wrap gap-2 mb-12" role="tablist" aria-label={t.pathTitle}>
           {PL_CATS.map((c) => (
             <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
@@ -38,15 +47,14 @@ export default function Curriculum({ t, lang, rtl }) {
           ))}
         </div>
 
-        {/* Grouped by level */}
-        <div className="space-y-12">
-          {levels.map(({ lvl, items }) => (
-            <div key={lvl}>
-              <div className="flex items-center gap-3 mb-5">
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-pine-800 text-white">
-                  {PL_LEVELS[lvl][lang]}
-                </span>
+        {/* Grouped by science → ordered beginner to advanced inside each */}
+        <div className="space-y-14">
+          {sciences.map(({ cat: c, items }) => (
+            <div key={c.key}>
+              <div className="flex items-center gap-3 mb-6">
+                <h3 className="text-xl md:text-2xl font-bold text-pine-800">{c[lang]}</h3>
                 <span className="h-px flex-1 bg-pearl-200" />
+                <span className="text-xs text-slate-400">{items.length}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -57,11 +65,11 @@ export default function Curriculum({ t, lang, rtl }) {
                       <span className="w-10 h-10 rounded-xl flex items-center justify-center bg-sage-100 shrink-0">
                         <PlayCircle size={19} className="text-sage-600" />
                       </span>
-                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-white border border-pearl-300 text-slate-500">
-                        {PL_CATS.find((c) => c.key === p.sci)?.[lang]}
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${LEVEL_STYLE[p.level]}`}>
+                        {PL_LEVELS[p.level][lang]}
                       </span>
                     </div>
-                    <h3 className="font-bold text-ink leading-snug mb-4 flex-1">{p.title[lang]}</h3>
+                    <h4 className="font-bold text-ink leading-snug mb-4 flex-1">{p.title[lang]}</h4>
                     <div className="flex flex-col gap-2">
                       {p.sources.map((s, i) => (
                         <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
