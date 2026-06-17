@@ -5,6 +5,7 @@ import About from "@/components/About";
 import Library from "@/components/Library";
 import AudioLibrary from "@/components/AudioLibrary";
 import Feed from "@/components/Feed";
+import Curriculum from "@/components/Curriculum";
 import SmartSearch from "@/components/SmartSearch";
 import Footer from "@/components/Footer";
 
@@ -21,6 +22,7 @@ export default function Page({ params }) {
       <Library t={t} lang={lang} />
       <AudioLibrary t={t} lang={lang} rtl={rtl} />
       <Feed t={t} lang={lang} rtl={rtl} />
+      <Curriculum t={t} lang={lang} rtl={rtl} />
       <SmartSearch t={t} lang={lang} />
       <Footer t={t} lang={lang} />
     </>
