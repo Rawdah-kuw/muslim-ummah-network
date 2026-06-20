@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { GraduationCap, PlayCircle, ArrowUpLeft, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { GraduationCap, PlayCircle, Play, Youtube, ArrowUpLeft, ArrowUpRight, ShieldCheck } from "lucide-react";
 import SectionHead from "./SectionHead";
 import { PLAYLISTS, PL_CATS, PL_LEVELS, PL_CHANNELS } from "@/lib/curriculum";
+import { YT_CHANNELS } from "@/lib/data";
 
 const LEVEL_STYLE = {
   1: "bg-sage-100 text-sage-700",
@@ -15,7 +16,7 @@ export default function Curriculum({ t, lang, rtl }) {
   const [cat, setCat] = useState("all");
   const Arrow = rtl ? ArrowUpLeft : ArrowUpRight;
 
-  // Sciences to show (in curriculum order), each with its playlists sorted beginner → advanced
+  // Sciences in curriculum order, each with playlists sorted beginner → advanced
   const sciences = PL_CATS.filter((c) => c.key !== "all")
     .filter((c) => cat === "all" || c.key === cat)
     .map((c) => ({
@@ -87,6 +88,35 @@ export default function Curriculum({ t, lang, rtl }) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Recommended YouTube channels — all YouTube lives here */}
+        <div className="mt-20">
+          <div className="flex items-center gap-3 mb-6">
+            <Youtube size={22} className="text-red-500" />
+            <h3 className="text-xl md:text-2xl font-bold text-pine-800">{t.pathChannels}</h3>
+            <span className="h-px flex-1 bg-pearl-200" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {YT_CHANNELS.map((c) => (
+              <a key={c.id} href={c.url} target="_blank" rel="noopener noreferrer"
+                className="group bg-pearl-50 rounded-2xl border border-pearl-200 p-5 flex items-start gap-4 hover:shadow-pine transition-shadow">
+                <span className="w-11 h-11 rounded-xl bg-sage-100 flex items-center justify-center shrink-0">
+                  <Play size={18} className="text-sage-600" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                    <h4 className="font-bold text-ink truncate">{c.name[lang]}</h4>
+                    <Arrow size={15} className="text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" />
+                  </div>
+                  <p className="text-xs text-slate-500 mb-1.5" dir="ltr">{c.handle}</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    {c.official ? t.officialBadge : c.topic[lang]}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </section>

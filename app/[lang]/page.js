@@ -21,8 +21,8 @@ export default function Page({ params }) {
       <About t={t} />
       <Library t={t} lang={lang} />
       <AudioLibrary t={t} lang={lang} rtl={rtl} />
-      <Feed t={t} lang={lang} rtl={rtl} />
       <Curriculum t={t} lang={lang} rtl={rtl} />
+      <Feed t={t} lang={lang} />
       <SmartSearch t={t} lang={lang} />
       <Footer t={t} lang={lang} />
     </>

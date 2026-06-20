@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Languages } from "lucide-react";
 import PearlMark from "./PearlMark";
 
-const NAV_IDS = ["about", "library", "audio", "feed", "curriculum", "search"];
+const NAV_IDS = ["about", "library", "audio", "curriculum", "feed", "search"];
 
 export default function Header({ t, lang }) {
   return (
