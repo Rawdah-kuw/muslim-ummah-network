@@ -1,4 +1,6 @@
+import { Mail } from "lucide-react";
 import PearlMark from "./PearlMark";
+import { CONTACT_EMAIL } from "@/lib/data";
 
 export default function Footer({ t, lang }) {
   return (
@@ -12,6 +14,14 @@ export default function Footer({ t, lang }) {
           </div>
         </div>
         <p className="font-quran text-lg text-slate-500">{t.footerHadith}</p>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 mt-8 pt-6 border-t border-pearl-200 flex flex-col items-center gap-2 text-center">
+        <a href={`mailto:${CONTACT_EMAIL}`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-sage-600 hover:underline">
+          <Mail size={15} /> {t.contactUs}: <span dir="ltr">{CONTACT_EMAIL}</span>
+        </a>
+        <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">{t.rightsNotice}</p>
       </div>
     </footer>
   );

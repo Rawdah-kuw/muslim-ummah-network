@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { BookOpen, PenLine, Download, FileText, X, ExternalLink, Library as LibraryIcon } from "lucide-react";
 import SectionHead from "./SectionHead";
-import { BOOKS, CATS } from "@/lib/data";
+import { BOOKS, CATS, CONTACT_EMAIL } from "@/lib/data";
 
 export default function Library({ t, lang }) {
   const [cat, setCat] = useState("all");
@@ -112,6 +112,12 @@ export default function Library({ t, lang }) {
             </article>
           ))}
         </div>
+
+        {/* Content / intellectual-property notice */}
+        <p className="mt-12 text-center text-xs text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          {t.rightsNotice}{" "}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-sage-600 hover:underline" dir="ltr">{CONTACT_EMAIL}</a>
+        </p>
       </div>
 
       {/* In-site PDF reader */}
