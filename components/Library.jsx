@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { BookOpen, PenLine, Download, FileText, X, ExternalLink, Library as LibraryIcon } from "lucide-react";
 import SectionHead from "./SectionHead";
-import { BOOKS, CATS, CONTACT_EMAIL } from "@/lib/data";
+import { BOOKS, CATS, CONTACT_EMAIL, bookSlug } from "@/lib/data";
 
 export default function Library({ t, lang }) {
   const [cat, setCat] = useState("all");
@@ -57,8 +58,11 @@ export default function Library({ t, lang }) {
                   {CATS.find((c) => c.key === b.cat)?.[lang]}
                 </span>
               </div>
-              <h3 className="text-lg font-bold mb-1 text-ink">{b.title[lang]}</h3>
-              <p className="text-sm text-slate-500 mb-3">{b.author[lang]}</p>
+              <Link href={`/${lang}/library/${bookSlug(b)}`}
+                className="text-lg font-bold mb-1 text-ink hover:text-sage-600 transition-colors">
+                {b.title[lang]}
+              </Link>
+              <p className="text-sm text-slate-500 mb-3 mt-1">{b.author[lang]}</p>
               <p className="text-sm text-slate-500 leading-relaxed mb-5 flex-1">{b.desc[lang]}</p>
               <div className="flex items-center justify-between text-xs text-slate-500 mb-4">
                 <span className="flex items-center gap-1">

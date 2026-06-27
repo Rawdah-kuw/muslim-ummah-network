@@ -14,11 +14,22 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 export function generateMetadata({ params }) {
-  const t = STR[params.lang] ?? STR.ar;
+  const lang = LANGS.includes(params.lang) ? params.lang : "ar";
+  const t = STR[lang];
   return {
-    title: t.siteName,
+    metadataBase: new URL("https://muslimummah.app"),
+    title: { default: t.siteName, template: `%s — ${t.siteName}` },
     description: t.heroDesc,
-    openGraph: { title: t.siteName, description: t.heroDesc, type: "website" },
+    alternates: { canonical: `/${lang}` },
+    openGraph: {
+      title: t.siteName,
+      description: t.heroDesc,
+      type: "website",
+      siteName: t.siteName,
+      url: `https://muslimummah.app/${lang}`,
+      locale: lang === "ar" ? "ar_AR" : "en_US",
+    },
+    twitter: { card: "summary_large_image", title: t.siteName, description: t.heroDesc },
   };
 }
 
