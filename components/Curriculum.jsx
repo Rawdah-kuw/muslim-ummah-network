@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { GraduationCap, PlayCircle, Play, Youtube, ArrowUpLeft, ArrowUpRight, ShieldCheck } from "lucide-react";
 import SectionHead from "./SectionHead";
 import { PLAYLISTS, PL_CATS, PL_LEVELS, PL_CHANNELS } from "@/lib/curriculum";
@@ -53,7 +54,10 @@ export default function Curriculum({ t, lang, rtl }) {
           {sciences.map(({ cat: c, items }) => (
             <div key={c.key}>
               <div className="flex items-center gap-3 mb-6">
-                <h3 className="text-xl md:text-2xl font-bold text-pine-800">{c[lang]}</h3>
+                <Link href={`/${lang}/path/${c.key}`}
+                  className="text-xl md:text-2xl font-bold text-pine-800 hover:text-sage-600 transition-colors">
+                  {c[lang]}
+                </Link>
                 <span className="h-px flex-1 bg-pearl-200" />
                 <span className="text-xs text-slate-400">{items.length}</span>
               </div>
