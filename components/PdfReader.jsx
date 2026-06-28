@@ -40,7 +40,8 @@ export default function PdfReader({ url, t }) {
               slot.dataset.done = "1";
               try {
                 const page = await pdf.getPage(Number(slot.dataset.page));
-                const scale = width / page.getViewport({ scale: 1 }).width;
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const scale = (width / page.getViewport({ scale: 1 }).width) * dpr;
                 const vp = page.getViewport({ scale });
                 const canvas = document.createElement("canvas");
                 canvas.width = vp.width;
