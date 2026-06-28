@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Languages, Moon, Sun } from "lucide-react";
 import PearlMark from "./PearlMark";
 
-const NAV_IDS = ["about", "library", "audio", "curriculum", "search"];
+const NAV_IDS = ["about", "library", "curriculum", "search"];
 
 export default function Header({ t, lang }) {
   const [dark, setDark] = useState(false);

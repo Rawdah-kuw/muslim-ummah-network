@@ -4,7 +4,6 @@ import Hero from "@/components/Hero";
 import DailyWird from "@/components/DailyWird";
 import About from "@/components/About";
 import Library from "@/components/Library";
-import AudioLibrary from "@/components/AudioLibrary";
 import Feed from "@/components/Feed";
 import Curriculum from "@/components/Curriculum";
 import SmartSearch from "@/components/SmartSearch";
@@ -24,7 +23,6 @@ export default function Page({ params }) {
       <DailyWird t={t} lang={lang} />
       <About t={t} />
       <Library t={t} lang={lang} />
-      <AudioLibrary t={t} lang={lang} rtl={rtl} />
       <Curriculum t={t} lang={lang} rtl={rtl} />
       <Feed t={t} lang={lang} />
       <SmartSearch t={t} lang={lang} />
