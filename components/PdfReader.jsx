@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 // PDF.js loaded from a CDN (no build dependency). Pages render lazily as they
 // scroll into view, so even very large books stay light on phones.
-const BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build";
+const ASSET = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379";
+const BASE = `${ASSET}/build`;
 
 export default function PdfReader({ url, t }) {
   const wrapRef = useRef(null);
@@ -19,7 +20,12 @@ export default function PdfReader({ url, t }) {
         const pdfjs = await import(/* webpackIgnore: true */ `${BASE}/pdf.min.mjs`);
         pdfjs.GlobalWorkerOptions.workerSrc = `${BASE}/pdf.worker.min.mjs`;
 
-        const pdf = await pdfjs.getDocument(url).promise;
+        const pdf = await pdfjs.getDocument({
+          url,
+          cMapUrl: `${ASSET}/cmaps/`,
+          cMapPacked: true,
+          standardFontDataUrl: `${ASSET}/standard_fonts/`,
+        }).promise;
         if (cancelled) return;
 
         const wrap = wrapRef.current;
