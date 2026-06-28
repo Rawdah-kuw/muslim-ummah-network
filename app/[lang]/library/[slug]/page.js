@@ -67,17 +67,17 @@ export default function BookPage({ params }) {
         <div className="flex flex-wrap gap-3">
           {b.bilingual ? (
             <>
-              <Link href={`/${lang}/library/${bookSlug(b)}/read`}
+              <Link href={`/${lang}/library/${bookSlug(b)}/read`} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                 <BookOpen size={16} /> {t.readAr}
               </Link>
-              <Link href={`/${lang}/library/${bookSlug(b)}/read?v=en`}
+              <Link href={`/${lang}/library/${bookSlug(b)}/read?v=en`} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors">
                 <BookOpen size={16} /> {t.readEn}
               </Link>
             </>
           ) : (
-            <Link href={`/${lang}/library/${bookSlug(b)}/read`}
+            <Link href={`/${lang}/library/${bookSlug(b)}/read`} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
               <BookOpen size={16} /> {t.readBook}
             </Link>

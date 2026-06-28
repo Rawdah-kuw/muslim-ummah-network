@@ -60,11 +60,11 @@ export default function Library({ t, lang }) {
               {b.bilingual ? (
                 <>
                   <div className="flex gap-2">
-                    <Link href={readHref(b)}
+                    <Link href={readHref(b)} target="_blank" rel="noopener noreferrer"
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                       <BookOpen size={15} /> {t.dlAr}
                     </Link>
-                    <Link href={readHref(b, "en")}
+                    <Link href={readHref(b, "en")} target="_blank" rel="noopener noreferrer"
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors">
                       <BookOpen size={15} /> {t.dlEn}
                     </Link>
@@ -82,7 +82,7 @@ export default function Library({ t, lang }) {
                 </>
               ) : (
                 <>
-                  <Link href={readHref(b)}
+                  <Link href={readHref(b)} target="_blank" rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                     <BookOpen size={16} /> {t.readBook}
                   </Link>
