@@ -67,20 +67,20 @@ export default function BookPage({ params }) {
         <div className="flex flex-wrap gap-3">
           {b.bilingual ? (
             <>
-              <a href={b.fileAr} target="_blank" rel="noopener noreferrer"
+              <Link href={`/${lang}/library/${bookSlug(b)}/read`}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                 <BookOpen size={16} /> {t.readAr}
-              </a>
-              <a href={b.fileEn} target="_blank" rel="noopener noreferrer"
+              </Link>
+              <Link href={`/${lang}/library/${bookSlug(b)}/read?v=en`}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors">
                 <BookOpen size={16} /> {t.readEn}
-              </a>
+              </Link>
             </>
           ) : (
-            <a href={b.fileAr} target="_blank" rel="noopener noreferrer"
+            <Link href={`/${lang}/library/${bookSlug(b)}/read`}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
               <BookOpen size={16} /> {t.readBook}
-            </a>
+            </Link>
           )}
           <a href={b.fileAr} download
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-slate-500 bg-pearl-100 hover:bg-pearl-200 transition-colors">
