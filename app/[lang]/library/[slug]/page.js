@@ -39,6 +39,7 @@ export default function BookPage({ params }) {
 
   const Back = lang === "ar" ? ArrowRight : ArrowLeft;
   const cat = CATS.find((c) => c.key === b.cat);
+  const related = BOOKS.filter((x) => x.cat === b.cat && x.id !== b.id).slice(0, 3);
 
   return (
     <>
@@ -94,6 +95,22 @@ export default function BookPage({ params }) {
           {t.rightsNotice}{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} dir="ltr" className="text-sage-600 hover:underline">{CONTACT_EMAIL}</a>
         </p>
+
+        {related.length > 0 && (
+          <div className="mt-14 pt-8 border-t border-pearl-200">
+            <h2 className="text-lg font-bold text-pine-800 mb-4">{t.relatedBooks}</h2>
+            <ul className="space-y-2.5">
+              {related.map((r) => (
+                <li key={r.id} className="text-sm">
+                  <Link href={`/${lang}/library/${bookSlug(r)}`} className="font-medium text-sage-600 hover:underline">
+                    {r.title[lang]}
+                  </Link>
+                  <span className="text-slate-400"> — {r.author[lang]}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </main>
       <Footer t={t} lang={lang} />
     </>

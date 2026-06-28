@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GraduationCap, PlayCircle, Play, Youtube, ArrowUpLeft, ArrowUpRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import SectionHead from "./SectionHead";
+import ShareButton from "./ShareButton";
 import { PLAYLISTS, PL_CATS, PL_LEVELS, PL_CHANNELS } from "@/lib/curriculum";
 import { YT_CHANNELS } from "@/lib/data";
 
@@ -86,6 +87,8 @@ export default function Curriculum({ t, lang, rtl }) {
                   <span className="text-xs font-medium text-sage-600 shrink-0" dir="ltr">
                     {items.filter((p) => done.has(p.id)).length} / {items.length}
                   </span>
+                  <ShareButton t={t} path={`/${lang}/path/${c.key}`} title={c[lang]}
+                    className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-sage-600 hover:text-sage-700" />
                 </div>
                 <div className="h-1.5 rounded-full bg-pearl-200 overflow-hidden">
                   <div className="h-full bg-sage-600 transition-all duration-300"
@@ -137,6 +140,8 @@ export default function Curriculum({ t, lang, rtl }) {
             <Youtube size={22} className="text-red-500" />
             <h3 className="text-xl md:text-2xl font-bold text-pine-800">{t.pathChannels}</h3>
             <span className="h-px flex-1 bg-pearl-200" />
+            <ShareButton t={t} path={`/${lang}/curated/youtube`} title={t.pathChannels}
+              className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-sage-600 hover:text-sage-700" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {YT_CHANNELS.map((c) => (

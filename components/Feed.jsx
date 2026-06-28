@@ -2,6 +2,7 @@
 
 import { Instagram } from "lucide-react";
 import SectionHead from "./SectionHead";
+import ShareButton from "./ShareButton";
 import { IG_PROFILES } from "@/lib/data";
 
 export default function Feed({ t, lang }) {
@@ -9,6 +10,11 @@ export default function Feed({ t, lang }) {
     <section id="feed" className="py-16 md:py-24 bg-pearl-50 scroll-mt-24">
       <div className="max-w-6xl mx-auto px-6">
         <SectionHead icon={Instagram} kicker={t.feedKicker} title={t.feedTitle} desc={t.feedDesc} />
+
+        <div className="flex justify-center mb-8">
+          <ShareButton t={t} path={`/${lang}/curated/instagram`} title={t.feedTitle}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {IG_PROFILES.map((p) => (
