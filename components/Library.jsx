@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, PenLine, Download, FileText, X, ExternalLink, Library as LibraryIcon } from "lucide-react";
 import SectionHead from "./SectionHead";
+import ShareButton from "./ShareButton";
 import { BOOKS, CATS, CONTACT_EMAIL, bookSlug } from "@/lib/data";
 
 export default function Library({ t, lang }) {
@@ -113,6 +114,8 @@ export default function Library({ t, lang }) {
                   <FileText size={13} /> {b.extra[lang]}
                 </a>
               )}
+              <ShareButton t={t} path={`/${lang}/library/${bookSlug(b)}`} title={b.title[lang]}
+                className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-sage-600 hover:bg-sage-100 transition-colors" />
             </article>
           ))}
         </div>

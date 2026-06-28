@@ -5,6 +5,7 @@ import { BOOKS, CATS, CONTACT_EMAIL, bookSlug } from "@/lib/data";
 import { STR, LANGS } from "@/lib/i18n";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ShareButton from "@/components/ShareButton";
 
 export function generateStaticParams() {
   const out = [];
@@ -85,6 +86,8 @@ export default function BookPage({ params }) {
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-slate-500 bg-pearl-100 hover:bg-pearl-200 transition-colors">
             <Download size={16} /> {t.dlPdf}
           </a>
+          <ShareButton t={t} path={`/${lang}/library/${bookSlug(b)}`} title={b.title[lang]}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
         </div>
 
         <p className="mt-14 text-xs text-slate-400 leading-relaxed">
