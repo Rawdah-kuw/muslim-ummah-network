@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { GraduationCap, PlayCircle, Play, Youtube, ArrowUpLeft, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { GraduationCap, PlayCircle, Play, Youtube, ArrowUpLeft, ArrowUpRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import SectionHead from "./SectionHead";
 import { PLAYLISTS, PL_CATS, PL_LEVELS, PL_CHANNELS } from "@/lib/curriculum";
 import { YT_CHANNELS } from "@/lib/data";
@@ -16,6 +16,29 @@ const LEVEL_STYLE = {
 export default function Curriculum({ t, lang, rtl }) {
   const [cat, setCat] = useState("all");
   const Arrow = rtl ? ArrowUpLeft : ArrowUpRight;
+
+  // Progress is kept only in the browser (no account, no personal data).
+  const [done, setDone] = useState(() => new Set());
+  useEffect(() => {
+    try {
+      setDone(new Set(JSON.parse(localStorage.getItem("mu_progress") || "[]")));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const toggleDone = (id) => {
+    setDone((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem("mu_progress", JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   // Sciences in curriculum order, each with playlists sorted beginner → advanced
   const sciences = PL_CATS.filter((c) => c.key !== "all")
@@ -53,13 +76,21 @@ export default function Curriculum({ t, lang, rtl }) {
         <div className="space-y-14">
           {sciences.map(({ cat: c, items }) => (
             <div key={c.key}>
-              <div className="flex items-center gap-3 mb-6">
-                <Link href={`/${lang}/path/${c.key}`}
-                  className="text-xl md:text-2xl font-bold text-pine-800 hover:text-sage-600 transition-colors">
-                  {c[lang]}
-                </Link>
-                <span className="h-px flex-1 bg-pearl-200" />
-                <span className="text-xs text-slate-400">{items.length}</span>
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Link href={`/${lang}/path/${c.key}`}
+                    className="text-xl md:text-2xl font-bold text-pine-800 hover:text-sage-600 transition-colors">
+                    {c[lang]}
+                  </Link>
+                  <span className="h-px flex-1 bg-pearl-200" />
+                  <span className="text-xs font-medium text-sage-600 shrink-0" dir="ltr">
+                    {items.filter((p) => done.has(p.id)).length} / {items.length}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-pearl-200 overflow-hidden">
+                  <div className="h-full bg-sage-600 transition-all duration-300"
+                    style={{ width: `${Math.round((items.filter((p) => done.has(p.id)).length / items.length) * 100)}%` }} />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -87,6 +118,12 @@ export default function Curriculum({ t, lang, rtl }) {
                         </a>
                       ))}
                     </div>
+                    <button type="button" onClick={() => toggleDone(p.id)} aria-pressed={done.has(p.id)}
+                      className={`mt-3 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-colors ${
+                        done.has(p.id) ? "bg-sage-600 text-cream" : "border border-sage-300 text-sage-600 hover:bg-sage-100"
+                      }`}>
+                      <CheckCircle2 size={14} /> {t.completed}
+                    </button>
                   </div>
                 ))}
               </div>
