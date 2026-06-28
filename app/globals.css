@@ -56,3 +56,69 @@ html {
 body, header, section, article, footer {
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
+
+/* ── Google Programmable Search — themed to match the site (light + dark) ── */
+.gsc-control-cse {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-family: var(--font-ui) !important;
+}
+.gsc-input-box {
+  background: rgb(var(--surface)) !important;
+  border: 1px solid rgb(var(--sage-300)) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: none !important;
+}
+table.gsc-input td.gsc-input { padding: 4px !important; }
+input.gsc-input {
+  color: rgb(var(--ink)) !important;
+  background-color: rgb(var(--surface)) !important;
+  font-family: var(--font-ui) !important;
+}
+.gsc-input .gsib_a { padding: 7px 10px !important; }
+.gsc-search-button-v2,
+.gsc-search-button-v2:hover,
+.gsc-search-button-v2:focus {
+  background: rgb(var(--sage-600)) !important;
+  border-color: rgb(var(--sage-600)) !important;
+  border-radius: 0.75rem !important;
+  padding: 11px 15px !important;
+}
+.gsc-search-button-v2:hover { background: rgb(var(--sage-700)) !important; }
+.gsc-search-button-v2 svg { fill: rgb(var(--cream)) !important; }
+.gsc-results,
+.gsc-above-wrapper-area,
+.gsc-result,
+.gsc-cursor-box,
+.gsc-result-info { background: transparent !important; border: none !important; }
+.gsc-results .gsc-result {
+  border: 1px solid rgb(var(--pearl-200)) !important;
+  background: rgb(var(--surface)) !important;
+  border-radius: 0.75rem !important;
+  padding: 14px !important;
+  margin-bottom: 10px !important;
+}
+.gs-title, .gs-title * { color: rgb(var(--pine-800)) !important; }
+.gs-snippet { color: rgb(var(--ink)) !important; }
+.gsc-url-top, .gs-visibleUrl, .gsc-url-bottom, .gs-visibleUrl-long {
+  color: rgb(var(--sage-600)) !important;
+}
+.gsc-completion-container {
+  background: rgb(var(--surface)) !important;
+  border-color: rgb(var(--sage-300)) !important;
+  font-family: var(--font-ui) !important;
+}
+.gsc-completion-container td { color: rgb(var(--ink)) !important; }
+.gsc-completion-selected { background: rgb(var(--sage-100)) !important; }
+.gsc-adBlock, .gcsc-find-more-on-google, .gcsc-more-maybe-branding-root { display: none !important; }
+.gsc-cursor-page {
+  color: rgb(var(--sage-600)) !important;
+  background: rgb(var(--pearl-100)) !important;
+  border-radius: 0.4rem !important;
+  padding: 2px 8px !important;
+}
+.gsc-cursor-current-page {
+  color: rgb(var(--cream)) !important;
+  background: rgb(var(--sage-600)) !important;
+}
