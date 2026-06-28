@@ -36,7 +36,7 @@ export default function Library({ t, lang }) {
             <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                 cat === c.key
-                  ? "bg-pine-800 text-white border-pine-800"
+                  ? "bg-pinebtn text-cream border-pine-800"
                   : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
               }`}>
               {c[lang]}
@@ -76,7 +76,7 @@ export default function Library({ t, lang }) {
                 <>
                   <div className="flex gap-2">
                     <button onClick={() => open(b.fileAr, b.title[lang])}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-white bg-sage-600 hover:bg-sage-700 transition-colors">
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                       <BookOpen size={15} /> {t.dlAr}
                     </button>
                     <button onClick={() => open(b.fileEn, b.title[lang])}
@@ -98,7 +98,7 @@ export default function Library({ t, lang }) {
               ) : (
                 <>
                   <button onClick={() => open(b.fileAr, b.title[lang])}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-white bg-sage-600 hover:bg-sage-700 transition-colors">
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                     <BookOpen size={16} /> {t.readBook}
                   </button>
                   <a href={b.fileAr} download

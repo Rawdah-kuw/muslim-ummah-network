@@ -68,7 +68,7 @@ export default function BookPage({ params }) {
           {b.bilingual ? (
             <>
               <a href={b.fileAr} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-white bg-sage-600 hover:bg-sage-700 transition-colors">
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
                 <BookOpen size={16} /> {t.readAr}
               </a>
               <a href={b.fileEn} target="_blank" rel="noopener noreferrer"
@@ -78,7 +78,7 @@ export default function BookPage({ params }) {
             </>
           ) : (
             <a href={b.fileAr} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-white bg-sage-600 hover:bg-sage-700 transition-colors">
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
               <BookOpen size={16} /> {t.readBook}
             </a>
           )}

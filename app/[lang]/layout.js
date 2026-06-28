@@ -50,6 +50,12 @@ export default function RootLayout({ children, params }) {
           fontFamily: "var(--font-ui)",
         }}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();",
+          }}
+        />
         {children}
       </body>
     </html>

@@ -42,7 +42,7 @@ function PlayRing({ ratio, playing, onClick }) {
           strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - ratio)}
           style={{ transition: "stroke-dashoffset 0.5s linear" }} />
       </svg>
-      <span className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-pine ${playing ? "bg-pine-800" : "bg-sage-600"}`}>
+      <span className={`w-12 h-12 rounded-full flex items-center justify-center text-cream shadow-pine ${playing ? "bg-pinebtn" : "bg-sage-600"}`}>
         {playing ? <Pause size={20} /> : <Play size={20} />}
       </span>
     </button>

@@ -10,7 +10,7 @@ import { YT_CHANNELS } from "@/lib/data";
 const LEVEL_STYLE = {
   1: "bg-sage-100 text-sage-700",
   2: "bg-pearl-200 text-pine-800",
-  3: "bg-pine-800 text-white",
+  3: "bg-pinebtn text-cream",
 };
 
 export default function Curriculum({ t, lang, rtl }) {
@@ -41,7 +41,7 @@ export default function Curriculum({ t, lang, rtl }) {
             <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                 cat === c.key
-                  ? "bg-pine-800 text-white border-pine-800"
+                  ? "bg-pinebtn text-cream border-pine-800"
                   : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
               }`}>
               {c[lang]}

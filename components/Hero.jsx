@@ -21,7 +21,7 @@ export default function Hero({ t }) {
         )}
         <div className="flex flex-wrap gap-3 justify-center">
           <a href="#library"
-            className="px-7 py-3.5 rounded-xl text-white font-medium bg-sage-600 hover:bg-sage-700 transition-colors">
+            className="px-7 py-3.5 rounded-xl text-cream font-medium bg-sage-600 hover:bg-sage-700 transition-colors">
             {t.ctaLibrary}
           </a>
           <a href="#search"

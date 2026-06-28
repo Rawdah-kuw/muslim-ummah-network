@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme tokens (RGB channels so Tailwind opacity utilities keep working) ── */
+:root {
+  --surface: 255 255 255;
+  --cream: 253 251 247;
+  --pinebtn: 27 59 43;
+  --ink: 30 41 59;
+  --pearl-50: 253 251 247;
+  --pearl-100: 247 244 237;
+  --pearl-200: 237 233 223;
+  --pearl-300: 217 212 199;
+  --pine-700: 42 74 57;
+  --pine-800: 27 59 43;   /* headings */
+  --pine-900: 18 43 31;
+  --sage-100: 237 243 240;
+  --sage-300: 215 228 221;
+  --sage-500: 107 143 126;
+  --sage-600: 79 114 99;
+  --sage-700: 62 90 78;
+}
+
+.dark {
+  --surface: 18 26 22;       /* page & card background */
+  --cream: 240 245 240;      /* text on accent buttons (stays light) */
+  --pinebtn: 27 59 43;       /* accent button bg (stays dark green) */
+  --ink: 213 222 214;        /* body text (light) */
+  --pearl-50: 26 35 30;      /* alternating section bg */
+  --pearl-100: 32 43 37;
+  --pearl-200: 45 59 51;     /* borders */
+  --pearl-300: 62 80 70;
+  --pine-700: 150 185 168;
+  --pine-800: 205 228 217;   /* headings (light) */
+  --pine-900: 10 16 13;      /* modal overlay base */
+  --sage-100: 34 47 41;      /* chips */
+  --sage-300: 52 70 61;      /* borders */
+  --sage-500: 138 173 156;
+  --sage-600: 79 114 99;     /* accent buttons (keep readable with cream text) */
+  --sage-700: 150 185 168;   /* hover / badge text */
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -11,4 +50,9 @@ html {
   outline: 2px solid #4f7263;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Smooth theme transition on surfaces and text */
+body, header, section, article, footer {
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
