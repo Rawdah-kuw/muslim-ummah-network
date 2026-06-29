@@ -25,7 +25,7 @@ export default function Page({ params }) {
       <About t={t} lang={lang} preview />
       <Library t={t} lang={lang} preview />
       <Curriculum t={t} lang={lang} rtl={rtl} preview />
-      <Feed t={t} lang={lang} />
+      <Feed t={t} lang={lang} preview />
       <SmartSearch t={t} lang={lang} />
       <AskLibrary t={t} lang={lang} />
       <Footer t={t} lang={lang} />

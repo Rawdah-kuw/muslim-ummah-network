@@ -1,23 +1,28 @@
 "use client";
 
-import { Instagram } from "lucide-react";
+import Link from "next/link";
+import { Instagram, ArrowLeft } from "lucide-react";
 import SectionHead from "./SectionHead";
 import ShareButton from "./ShareButton";
 import { IG_PROFILES } from "@/lib/data";
 
-export default function Feed({ t, lang }) {
+export default function Feed({ t, lang, preview = false }) {
+  const profiles = preview ? IG_PROFILES.slice(0, 6) : IG_PROFILES;
+
   return (
     <section id="feed" className="py-16 md:py-24 bg-pearl-50 scroll-mt-24">
       <div className="max-w-6xl mx-auto px-6">
         <SectionHead icon={Instagram} kicker={t.feedKicker} title={t.feedTitle} desc={t.feedDesc} />
 
-        <div className="flex justify-center mb-8">
-          <ShareButton t={t} path={`/${lang}/curated/instagram`} title={t.feedTitle}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
-        </div>
+        {!preview && (
+          <div className="flex justify-center mb-8">
+            <ShareButton t={t} path={`/${lang}/curated/instagram`} title={t.feedTitle}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {IG_PROFILES.map((p) => (
+          {profiles.map((p) => (
             <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer"
               className="group bg-white rounded-2xl border border-pearl-200 p-6 flex items-center gap-5 hover:shadow-pine-lg transition-shadow">
               <span className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold shrink-0 border-2 border-sage-300 bg-sage-100 text-sage-600">
@@ -34,6 +39,15 @@ export default function Feed({ t, lang }) {
             </a>
           ))}
         </div>
+
+        {preview && (
+          <div className="mt-8 text-center">
+            <Link href={`/${lang}/curated/instagram`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-cream bg-pinebtn hover:opacity-90 transition-opacity">
+              {t.feedViewAll} <ArrowLeft size={16} className="rtl:rotate-180" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
