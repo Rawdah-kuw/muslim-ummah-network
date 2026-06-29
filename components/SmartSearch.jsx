@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Search } from "lucide-react";
 import { APPROVED_SITES, PSE_CX } from "@/lib/data";
 
 export default function SmartSearch({ t, lang }) {
@@ -14,6 +14,27 @@ export default function SmartSearch({ t, lang }) {
     s.src = `https://cse.google.com/cse.js?cx=${PSE_CX}`;
     document.head.appendChild(s);
   }, []);
+
+  // Run a suggested question through the search widget.
+  const ask = (q) => {
+    try {
+      const cse = window.google && window.google.search && window.google.search.cse;
+      const els = cse && cse.element ? cse.element.getAllElements() : [];
+      if (els && els.length && typeof els[0].execute === "function") {
+        els[0].execute(q);
+        document.getElementById("search")?.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+    } catch {
+      /* widget not ready — fall back to filling the input */
+    }
+    const input = document.querySelector("input.gsc-input");
+    if (input) {
+      input.value = q;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.focus();
+    }
+  };
 
   return (
     <section id="search" className="py-16 md:py-24 bg-white scroll-mt-24">
@@ -28,6 +49,19 @@ export default function SmartSearch({ t, lang }) {
         {/* Google Programmable Search — restricted to the approved sites, no API key needed */}
         <div className="text-start rounded-2xl border border-sage-300 shadow-pine p-3 md:p-4 bg-white">
           <div className="gcse-search" />
+        </div>
+
+        {/* Guided questions */}
+        <div className="mt-7">
+          <p className="text-xs text-slate-500 mb-3">{t.searchTry}</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {t.searchSuggestions.map((q) => (
+              <button key={q} type="button" onClick={() => ask(q)}
+                className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-pearl-100 hover:bg-sage-100 text-sage-600 border border-pearl-300 transition-colors">
+                <Search size={13} /> {q}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-10">
