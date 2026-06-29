@@ -7,9 +7,10 @@ import SectionHead from "./SectionHead";
 import ShareButton from "./ShareButton";
 import { BOOKS, CATS, CONTACT_EMAIL, bookSlug } from "@/lib/data";
 
-export default function Library({ t, lang }) {
+export default function Library({ t, lang, preview = false }) {
   const [cat, setCat] = useState("all");
-  const books = cat === "all" ? BOOKS : BOOKS.filter((b) => b.cat === cat);
+  const filtered = cat === "all" ? BOOKS : BOOKS.filter((b) => b.cat === cat);
+  const books = preview ? BOOKS.slice(0, 6) : filtered;
   const readHref = (b, v) => `/${lang}/library/${bookSlug(b)}/read${v ? `?v=${v}` : ""}`;
 
   return (
@@ -17,18 +18,20 @@ export default function Library({ t, lang }) {
       <div className="max-w-6xl mx-auto px-6">
         <SectionHead icon={LibraryIcon} kicker={t.libKicker} title={t.libTitle} desc={t.libDesc} />
 
-        <div className="flex flex-wrap gap-2 mb-10" role="tablist" aria-label={t.libKicker}>
-          {CATS.map((c) => (
-            <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                cat === c.key
-                  ? "bg-pinebtn text-cream border-pine-800"
-                  : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
-              }`}>
-              {c[lang]}
-            </button>
-          ))}
-        </div>
+        {!preview && (
+          <div className="flex flex-wrap gap-2 mb-10" role="tablist" aria-label={t.libKicker}>
+            {CATS.map((c) => (
+              <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                  cat === c.key
+                    ? "bg-pinebtn text-cream border-pine-800"
+                    : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
+                }`}>
+                {c[lang]}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {books.map((b) => (
@@ -105,11 +108,19 @@ export default function Library({ t, lang }) {
           ))}
         </div>
 
-        {/* Content / intellectual-property notice */}
-        <p className="mt-12 text-center text-xs text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          {t.rightsNotice}{" "}
-          <a href={`mailto:${CONTACT_EMAIL}`} className="text-sage-600 hover:underline" dir="ltr">{CONTACT_EMAIL}</a>
-        </p>
+        {preview ? (
+          <div className="mt-10 text-center">
+            <Link href={`/${lang}/library`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-cream bg-pinebtn hover:opacity-90 transition-opacity">
+              {t.viewAllBooks}
+            </Link>
+          </div>
+        ) : (
+          <p className="mt-12 text-center text-xs text-slate-400 max-w-2xl mx-auto leading-relaxed">
+            {t.rightsNotice}{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-sage-600 hover:underline" dir="ltr">{CONTACT_EMAIL}</a>
+          </p>
+        )}
       </div>
     </section>
   );

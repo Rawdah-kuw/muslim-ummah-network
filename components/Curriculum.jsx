@@ -14,7 +14,7 @@ const LEVEL_STYLE = {
   3: "bg-pinebtn text-cream",
 };
 
-export default function Curriculum({ t, lang, rtl }) {
+export default function Curriculum({ t, lang, rtl, preview = false }) {
   const [cat, setCat] = useState("all");
   const Arrow = rtl ? ArrowUpLeft : ArrowUpRight;
 
@@ -60,22 +60,24 @@ export default function Curriculum({ t, lang, rtl }) {
         </div>
 
         {/* Science filters */}
-        <div className="flex flex-wrap gap-2 mb-12" role="tablist" aria-label={t.pathTitle}>
-          {PL_CATS.map((c) => (
-            <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                cat === c.key
-                  ? "bg-pinebtn text-cream border-pine-800"
-                  : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
-              }`}>
-              {c[lang]}
-            </button>
-          ))}
-        </div>
+        {!preview && (
+          <div className="flex flex-wrap gap-2 mb-12" role="tablist" aria-label={t.pathTitle}>
+            {PL_CATS.map((c) => (
+              <button key={c.key} onClick={() => setCat(c.key)} role="tab" aria-selected={cat === c.key}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                  cat === c.key
+                    ? "bg-pinebtn text-cream border-pine-800"
+                    : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
+                }`}>
+                {c[lang]}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Grouped by science → ordered beginner to advanced inside each */}
         <div className="space-y-14">
-          {sciences.map(({ cat: c, items }) => (
+          {(preview ? sciences.slice(0, 2) : sciences).map(({ cat: c, items }) => (
             <div key={c.key}>
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
@@ -134,7 +136,16 @@ export default function Curriculum({ t, lang, rtl }) {
           ))}
         </div>
 
-        {/* Recommended YouTube channels — all YouTube lives here */}
+        {preview && (
+          <div className="mt-12 text-center">
+            <Link href={`/${lang}/curriculum`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-cream bg-pinebtn hover:opacity-90 transition-opacity">
+              {t.viewAllPath}
+            </Link>
+          </div>
+        )}
+
+        {!preview && (
         <div className="mt-20">
           <div className="flex items-center gap-3 mb-6">
             <Youtube size={22} className="text-red-500" />
@@ -164,6 +175,7 @@ export default function Curriculum({ t, lang, rtl }) {
             ))}
           </div>
         </div>
+        )}
       </div>
     </section>
   );

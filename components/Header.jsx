@@ -6,6 +6,11 @@ import { Languages, Moon, Sun } from "lucide-react";
 import PearlMark from "./PearlMark";
 
 const NAV_IDS = ["about", "library", "curriculum", "search"];
+const navHref = (lang, id) =>
+  id === "about" ? `/${lang}/about`
+  : id === "library" ? `/${lang}/library`
+  : id === "curriculum" ? `/${lang}/curriculum`
+  : `/${lang}#${id}`;
 
 export default function Header({ t, lang }) {
   const [dark, setDark] = useState(false);
@@ -37,10 +42,10 @@ export default function Header({ t, lang }) {
         <div className="flex flex-wrap items-center justify-center gap-1">
           <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Main">
             {NAV_IDS.map((id) => (
-              <a key={id} href={`/${lang}#${id}`}
+              <Link key={id} href={navHref(lang, id)}
                 className="px-3 md:px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-pearl-100 transition-colors">
                 {t.nav[id]}
-              </a>
+              </Link>
             ))}
           </nav>
           <button type="button" onClick={toggleTheme} aria-label={dark ? t.lightMode : t.darkMode}

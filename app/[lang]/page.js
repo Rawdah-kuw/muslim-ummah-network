@@ -22,9 +22,9 @@ export default function Page({ params }) {
       <Header t={t} lang={lang} />
       <Hero t={t} />
       <DailyWird t={t} lang={lang} />
-      <About t={t} />
-      <Library t={t} lang={lang} />
-      <Curriculum t={t} lang={lang} rtl={rtl} />
+      <About t={t} lang={lang} preview />
+      <Library t={t} lang={lang} preview />
+      <Curriculum t={t} lang={lang} rtl={rtl} preview />
       <Feed t={t} lang={lang} />
       <SmartSearch t={t} lang={lang} />
       <AskLibrary t={t} lang={lang} />

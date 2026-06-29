@@ -33,14 +33,14 @@ export default function AskLibrary({ t, lang }) {
   };
 
   return (
-    <section id="ask" className="py-16 md:py-24 bg-pearl-50 scroll-mt-24">
+    <section id="ask" className="py-16 md:py-24 bg-[#16302a] scroll-mt-24">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 text-sm font-medium bg-sage-100 text-sage-600">
           <Sparkles size={16} /> {t.askKicker}
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-pinebtn text-cream">{t.beta}</span>
         </div>
-        <h2 className="text-3xl md:text-5xl font-bold mb-3 text-pine-800">{t.askTitle}</h2>
-        <p className="text-slate-500 mb-8 text-base md:text-lg">{t.askSub}</p>
+        <h2 className="text-3xl md:text-5xl font-bold mb-3 text-cream">{t.askTitle}</h2>
+        <p className="text-pearl-200 mb-8 text-base md:text-lg">{t.askSub}</p>
 
         <div className="bg-white rounded-2xl p-2 flex items-center gap-2 shadow-pine border border-sage-300">
           <input
@@ -58,7 +58,7 @@ export default function AskLibrary({ t, lang }) {
           </button>
         </div>
 
-        {err && <p className="mt-6 text-sm text-slate-500">{err}</p>}
+        {err && <p className="mt-6 text-sm text-pearl-200">{err}</p>}
 
         {res && (
           <div className="mt-8 text-start">
@@ -87,7 +87,7 @@ export default function AskLibrary({ t, lang }) {
           </div>
         )}
 
-        <p className="mt-6 inline-flex items-center gap-1.5 text-xs text-slate-400 leading-relaxed">
+        <p className="mt-6 inline-flex items-center gap-1.5 text-xs text-pearl-300 leading-relaxed">
           <AlertTriangle size={13} /> {t.askDisclaimer}
         </p>
       </div>

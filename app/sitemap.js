@@ -12,6 +12,8 @@ export default function sitemap() {
   for (const lang of LANGS) {
     urls.push({ url: `${BASE}/${lang}`, lastModified: now, changeFrequency: "weekly", priority: 1 });
     urls.push({ url: `${BASE}/${lang}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 });
+    urls.push({ url: `${BASE}/${lang}/library`, lastModified: now, changeFrequency: "weekly", priority: 0.9 });
+    urls.push({ url: `${BASE}/${lang}/curriculum`, lastModified: now, changeFrequency: "weekly", priority: 0.9 });
     urls.push({ url: `${BASE}/${lang}/curated/youtube`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
     urls.push({ url: `${BASE}/${lang}/curated/instagram`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
 

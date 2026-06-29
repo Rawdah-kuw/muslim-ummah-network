@@ -1,4 +1,5 @@
-import { Info, Youtube, ExternalLink, Home, GraduationCap, Users, BookOpen, Search, Moon, Sprout } from "lucide-react";
+import Link from "next/link";
+import { Info, Youtube, ExternalLink, Home, GraduationCap, Users, BookOpen, Search, Moon, Sprout, ArrowLeft } from "lucide-react";
 import SectionHead from "./SectionHead";
 
 // Icons per milestone (content lives in i18n: t.aboutTimeline). The last two
@@ -13,7 +14,25 @@ const STEPS = [
   { Icon: Sprout, accent: true },
 ];
 
-export default function About({ t }) {
+export default function About({ t, lang = "ar", preview = false }) {
+  if (preview) {
+    return (
+      <section id="about" className="py-16 md:py-24 bg-white scroll-mt-24">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <SectionHead icon={Info} kicker={t.aboutKicker} title={t.aboutTitle} />
+          <p className="text-slate-600 leading-loose text-base md:text-lg">{t.aboutParas[0]}</p>
+          <blockquote className="font-quran text-xl md:text-2xl mt-10 mb-1.5 text-sage-600 leading-loose">
+            {t.aboutHadith}
+          </blockquote>
+          <p className="text-xs text-slate-400 mb-8">{t.aboutHadithSrc}</p>
+          <Link href={`/${lang}/about`}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium text-cream bg-pinebtn hover:opacity-90 transition-opacity">
+            {t.aboutReadMore} <ArrowLeft size={16} className="rtl:rotate-180" />
+          </Link>
+        </div>
+      </section>
+    );
+  }
   return (
     <section id="about" className="py-16 md:py-24 bg-white scroll-mt-24">
       <div className="max-w-3xl mx-auto px-6">
