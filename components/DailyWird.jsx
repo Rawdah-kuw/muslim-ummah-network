@@ -1,5 +1,6 @@
 import { Sparkles } from "lucide-react";
 import ShareButton from "./ShareButton";
+import WirdDownload from "./WirdDownload";
 import { WIRD } from "@/lib/wird";
 
 // Server component: picks the same item for everyone on a given day.
@@ -26,8 +27,11 @@ export default function DailyWird({ t, lang }) {
 
         <p className="text-sm text-sage-600 mb-6">{item.source[lang]}</p>
 
-        <ShareButton t={t} path={`/${lang}`} title={shareTitle}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <ShareButton t={t} path={`/${lang}`} title={shareTitle}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
+          <WirdDownload item={item} lang={lang} t={t} />
+        </div>
       </div>
     </section>
   );
