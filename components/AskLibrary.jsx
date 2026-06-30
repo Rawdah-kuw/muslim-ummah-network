@@ -23,7 +23,7 @@ export default function AskLibrary({ t, lang, embedded = false }) {
         body: JSON.stringify({ q: query, lang }),
       });
       const data = await r.json();
-      if (data.error) setErr(t.askError);
+      if (data.error) setErr(data.error === "rate-limited" ? t.askRateLimited : t.askError);
       else setRes(data);
     } catch {
       setErr(t.askError);

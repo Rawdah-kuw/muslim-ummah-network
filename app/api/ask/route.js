@@ -4,6 +4,30 @@ import { BOOKS, bookSlug } from "@/lib/data";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+// --- Basic in-memory rate limit (per IP, per serverless instance) ---
+// Blunt but effective at curbing abuse and runaway cost on the Gemini key.
+const RL_WINDOW_MS = 60_000; // 1 minute
+const RL_MAX = 15; // max requests per IP per window
+const hits = new Map(); // ip -> number[] (timestamps)
+
+function rateLimited(ip) {
+  const now = Date.now();
+  const arr = (hits.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+  if (arr.length >= RL_MAX) {
+    hits.set(ip, arr);
+    return true;
+  }
+  arr.push(now);
+  hits.set(ip, arr);
+  if (hits.size > 5000) hits.clear(); // guard against unbounded growth
+  return false;
+}
+
+function clientIp(req) {
+  const xff = req.headers.get("x-forwarded-for") || "";
+  return xff.split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
+}
+
 function titleOf(slug, lang) {
   const b = BOOKS.find((x) => bookSlug(x) === slug);
   return b ? b.title[lang] || b.title.ar : slug;
@@ -17,13 +41,19 @@ function score(words, text) {
 }
 
 export async function POST(req) {
+  if (rateLimited(clientIp(req))) {
+    return Response.json({ error: "rate-limited" }, { status: 429 });
+  }
   let body;
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: "bad-request" }, { status: 400 });
   }
-  const q = (body.q || "").trim().slice(0, 300);
+  if (typeof body.q !== "string") {
+    return Response.json({ error: "bad-request" }, { status: 400 });
+  }
+  const q = body.q.trim().slice(0, 300);
   const lang = body.lang === "en" ? "en" : "ar";
   if (!q) return Response.json({ error: "empty" }, { status: 400 });
   if (!process.env.GEMINI_KEY) return Response.json({ error: "no-key" }, { status: 500 });
