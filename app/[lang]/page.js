@@ -6,8 +6,7 @@ import About from "@/components/About";
 import Library from "@/components/Library";
 import Feed from "@/components/Feed";
 import Curriculum from "@/components/Curriculum";
-import SmartSearch from "@/components/SmartSearch";
-import AskLibrary from "@/components/AskLibrary";
+import Search from "@/components/Search";
 import Footer from "@/components/Footer";
 
 export const revalidate = 3600;
@@ -26,8 +25,7 @@ export default function Page({ params }) {
       <Library t={t} lang={lang} preview />
       <Curriculum t={t} lang={lang} rtl={rtl} preview />
       <Feed t={t} lang={lang} preview />
-      <SmartSearch t={t} lang={lang} />
-      <AskLibrary t={t} lang={lang} />
+      <Search t={t} lang={lang} />
       <Footer t={t} lang={lang} />
     </>
   );
