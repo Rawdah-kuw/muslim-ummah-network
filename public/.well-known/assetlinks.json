@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.muslimummah.twa",
+      "sha256_cert_fingerprints": [
+        "01:73:1F:1B:AC:CB:90:0C:14:CF:DC:5B:91:1A:EF:33:AA:B1:AC:BB:5E:B1:E2:52:60:F2:1C:64:33:CD:8E:45"
+      ]
+    }
+  }
+]
