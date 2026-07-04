@@ -30,8 +30,17 @@ export function generateMetadata({ params }) {
       locale: lang === "ar" ? "ar_AR" : "en_US",
     },
     twitter: { card: "summary_large_image", title: t.siteName, description: t.heroDesc },
+    manifest: "/manifest.json",
+    icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
+    appleWebApp: { capable: true, title: t.siteName, statusBarStyle: "default" },
   };
 }
+
+export const viewport = {
+  themeColor: "#16302a",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export default function RootLayout({ children, params }) {
   const lang = LANGS.includes(params.lang) ? params.lang : "ar";
@@ -54,6 +63,12 @@ export default function RootLayout({ children, params }) {
           dangerouslySetInnerHTML={{
             __html:
               "(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();",
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}",
           }}
         />
         {children}

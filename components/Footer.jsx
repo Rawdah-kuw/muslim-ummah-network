@@ -21,6 +21,9 @@ export default function Footer({ t, lang }) {
           className="inline-flex items-center gap-1.5 text-sm font-medium text-sage-600 hover:underline">
           <Mail size={15} /> {t.contactUs}: <span dir="ltr">{CONTACT_EMAIL}</span>
         </a>
+        <a href={`/${lang}/privacy`} className="text-xs text-sage-600 hover:underline">
+          {lang === "ar" ? "سياسة الخصوصية" : "Privacy Policy"}
+        </a>
         <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">{t.rightsNotice}</p>
       </div>
     </footer>
