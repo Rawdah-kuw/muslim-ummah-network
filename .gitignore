@@ -10,4 +10,5 @@ node_modules/
 .vercel/
 .DS_Store
 *.log
+*.tmp
 npm-debug.log*
