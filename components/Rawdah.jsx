@@ -77,10 +77,16 @@ export default function Rawdah({ t }) {
 
         {/* Primary filter: audience */}
         <div className="flex flex-wrap gap-2 mb-3">
-          {[["all", "الكل"], ["نساء", "دروس النساء"], ["رجال", "دروس للجميع"]].map(([val, label]) => (
+          {[["all", "الكل"], ["نساء", "دروس النساء"]].map(([val, label]) => (
             <button key={val} onClick={() => setGender(val)} className={chip(gender === val)}>{label}</button>
           ))}
         </div>
+
+        {gender === "نساء" && (
+          <div className="mb-5 rounded-xl border px-4 py-3 text-sm leading-relaxed bg-[#fbf1f3] dark:bg-white border-[#eddada] dark:border-pearl-200 text-[#7a5252] dark:text-ink">
+            🔒 مجالس الذكر التي تقدّمها الداعيات <strong>للنساء فقط</strong> — لا يُسمح للرجال بالدخول، ولا يُسمح بتسجيل المحاضرات؛ حفظًا للأصوات والخصوصية.
+          </div>
+        )}
 
         {!searching && (
           <div className="flex flex-wrap gap-2 mb-8">
