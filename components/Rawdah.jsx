@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { Sprout, MapPin, Video, MessageCircle, Instagram, Clock, Building2 } from "lucide-react";
+import SectionHead from "./SectionHead";
 
 // Public (publishable) Supabase credentials — safe to expose; RLS allows reading published lessons only.
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://buvsgjiqtaftyexjvyzw.supabase.co";
@@ -9,19 +11,16 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishabl
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-const DAY_COLOR = {
-  "الأحد": "#b58d88", "الاثنين": "#7a9a8f", "الثلاثاء": "#9a8aa8", "الأربعاء": "#c9a961",
-  "الخميس": "#6b8caf", "الجمعة": "#8a7355", "السبت": "#a85a72",
-};
-
 // Existing Rawdah data is women's lessons — default to "نساء" when unset.
 const genderOf = (l) => (l.gender === "رجال" ? "رجال" : "نساء");
+const todayName = () => DAYS[new Date().getDay()];
 
-function todayName() {
-  return DAYS[new Date().getDay()];
-}
+const chip = (active) =>
+  `px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+    active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
+  }`;
 
-export default function Rawdah() {
+export default function Rawdah({ t }) {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
@@ -32,11 +31,7 @@ export default function Rawdah() {
   useEffect(() => {
     (async () => {
       try {
-        const { data, error } = await db
-          .from("lessons")
-          .select("*")
-          .eq("is_published", true)
-          .order("time", { ascending: true });
+        const { data, error } = await db.from("lessons").select("*").eq("is_published", true).order("time", { ascending: true });
         if (error) throw error;
         setLessons(data || []);
       } catch {
@@ -47,20 +42,14 @@ export default function Rawdah() {
     })();
   }, []);
 
-  const daysWithLessons = useMemo(
-    () => DAYS.filter((dn) => lessons.some((l) => l.day === dn)),
-    [lessons]
-  );
-
+  const daysWithLessons = useMemo(() => DAYS.filter((dn) => lessons.some((l) => l.day === dn)), [lessons]);
   const searching = q.trim().length > 0;
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     let out = lessons;
     if (gender !== "all") out = out.filter((l) => genderOf(l) === gender);
     if (searching) {
-      out = out.filter((l) =>
-        [l.title, l.teacher, l.area, l.location].filter(Boolean).some((f) => f.toLowerCase().includes(term))
-      );
+      out = out.filter((l) => [l.title, l.teacher, l.area, l.location].filter(Boolean).some((f) => f.toLowerCase().includes(term)));
     } else {
       out = out.filter((l) => l.day === day);
     }
@@ -68,67 +57,51 @@ export default function Rawdah() {
   }, [lessons, q, day, gender, searching]);
 
   return (
-    <div style={{ background: "#f0ebe0", minHeight: "100vh" }} dir="rtl">
-      <style>{`
-        .rw-wrap{max-width:920px;margin:0 auto;padding:28px 18px 60px;font-family:var(--font-ui)}
-        .rw-title{font-family:var(--font-read);font-size:clamp(34px,6vw,48px);font-weight:700;color:#3d5a52;text-align:center}
-        .rw-sub{text-align:center;color:#6b7570;font-size:15px;margin-top:4px}
-        .rw-search{width:100%;padding:14px 18px;border-radius:14px;border:1px solid #d8d0c0;background:#fff;font-size:16px;color:#2d3835;outline:none;font-family:var(--font-ui)}
-        .rw-chip{padding:8px 16px;border-radius:999px;border:1px solid #d8d0c0;background:#fff;color:#6b7570;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
-        .rw-card{background:#fff;border:1px solid #e2dccf;border-radius:18px;padding:20px;box-shadow:0 2px 10px rgba(90,122,111,.06)}
-        .rw-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:12px;font-size:14px;font-weight:600;text-decoration:none;border:1px solid #d8d0c0;color:#3d5a52;background:#f7f4ee}
-        .rw-btn.primary{background:#5a7a6f;color:#fff;border-color:#5a7a6f}
-        .rw-btn.zoom{background:#6b8caf;color:#fff;border-color:#6b8caf}
-        .rw-btn.channel{background:#3d7a5a;color:#fff;border-color:#3d7a5a}
-      `}</style>
-      <div className="rw-wrap">
-        <div style={{ letterSpacing: 10, color: "#b58d88", textAlign: "center", fontSize: 18, marginBottom: 8 }}>◈ ◈ ◈</div>
-        <h1 className="rw-title">رَوضَة</h1>
-        <p className="rw-sub">دليل مجالس ودروس الذكر — أسبوعك في مكان واحد</p>
+    <section className="py-14 md:py-20 bg-pearl-50 scroll-mt-24 min-h-screen">
+      <div className="max-w-4xl mx-auto px-6">
+        <SectionHead icon={Sprout} kicker="مجالس ودروس الذكر" title="روضة"
+          desc="دليل أسبوعي لمجالس ودروس الذكر — بحث وتصفية حسب اليوم والفئة." />
 
-        <div style={{ margin: "22px 0 14px" }}>
-          <input className="rw-search" placeholder="ابحثي باسم الداعية أو العنوان أو المنطقة أو المسجد…"
-            value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
+        <input
+          value={q} onChange={(e) => setQ(e.target.value)}
+          placeholder="ابحثي باسم الداعية أو العنوان أو المنطقة أو المسجد…"
+          className="w-full px-5 py-3.5 rounded-xl border border-pearl-300 bg-white text-ink outline-none focus:border-sage-300 transition-colors mb-6"
+        />
 
-        {/* Primary filter: audience (women / men-for-all) */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {/* Primary filter: audience */}
+        <div className="flex flex-wrap gap-2 mb-3">
           {[["all", "الكل"], ["نساء", "دروس النساء"], ["رجال", "دروس للجميع"]].map(([val, label]) => (
-            <button key={val} className="rw-chip" onClick={() => setGender(val)}
-              style={gender === val ? { background: "#3d5a52", color: "#fff", borderColor: "#3d5a52" } : {}}>{label}</button>
+            <button key={val} onClick={() => setGender(val)} className={chip(gender === val)}>{label}</button>
           ))}
         </div>
 
         {!searching && (
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginBottom: 8 }}>
+          <div className="flex flex-wrap gap-2 mb-8">
             {daysWithLessons.map((dn) => (
-              <button key={dn} className="rw-chip" onClick={() => setDay(dn)}
-                style={day === dn ? { background: DAY_COLOR[dn], color: "#fff", borderColor: DAY_COLOR[dn] } : {}}>
-                {dn}
-              </button>
+              <button key={dn} onClick={() => setDay(dn)} className={chip(day === dn)}>{dn}</button>
             ))}
           </div>
         )}
 
         {searching && (
-          <p style={{ color: "#6b7570", fontSize: 14, marginBottom: 12 }}>
+          <p className="text-sm text-slate-500 mb-6">
             {results.length ? `وجدنا ${results.length} نتيجة لـ «${q}»` : `لا توجد نتائج لـ «${q}»`}
           </p>
         )}
 
         {loading ? (
-          <p style={{ textAlign: "center", color: "#6b7570", padding: 40 }}>جارٍ التحميل…</p>
+          <p className="text-center text-slate-500 py-16">جارٍ التحميل…</p>
         ) : err ? (
-          <p style={{ textAlign: "center", color: "#a85a72", padding: 40 }}>تعذّر تحميل الدروس الآن.</p>
+          <p className="text-center text-slate-500 py-16">تعذّر تحميل الدروس الآن.</p>
         ) : results.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6b7570", padding: 40 }}>لا توجد دروس مطابقة.</p>
+          <p className="text-center text-slate-500 py-16">لا توجد دروس مطابقة.</p>
         ) : (
-          <div style={{ display: "grid", gap: 16 }}>
+          <div className="grid gap-5">
             {results.map((l) => <Card key={l.id} l={l} showDay={searching} />)}
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -136,41 +109,59 @@ function Card({ l, showDay }) {
   const women = genderOf(l) === "نساء";
   const maps = l.location ? `https://maps.google.com/?q=${encodeURIComponent((l.location || "") + " " + (l.area || ""))}` : null;
   const wa = l.phone ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}` : null;
+  // Subtle audience tint in light mode; neutral surface in dark mode.
+  const tint = women ? "bg-[#fbf1f3] dark:bg-white" : "bg-[#eef4fa] dark:bg-white";
+  const btn = "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors";
   return (
-    <div className="rw-card"
-      style={{ background: women ? "#fbf0ef" : "#eef4f9", borderColor: women ? "#f0ddd9" : "#dbe6f1" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-        <h3 style={{ fontSize: 19, fontWeight: 700, color: "#2d3835", lineHeight: 1.4 }}>{l.title}</h3>
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          <span style={{ background: women ? "#b58d88" : "#5a7a8a", color: "#fff", padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
+    <article className={`rounded-2xl p-5 border border-pearl-200 hover:shadow-pine transition-shadow ${tint}`}>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-lg font-bold text-ink leading-snug">{l.title}</h3>
+        <div className="flex gap-1.5 shrink-0">
+          <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-cream ${women ? "bg-[#b58d88]" : "bg-[#5a7a8a]"}`}>
             {women ? "للنساء" : "للجميع"}
           </span>
           {showDay && l.day && (
-            <span style={{ background: DAY_COLOR[l.day] || "#7a7a7a", color: "#fff", padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>{l.day}</span>
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-200 text-pine-800">{l.day}</span>
           )}
         </div>
       </div>
-      {l.teacher && <p style={{ color: "#5a7a6f", fontWeight: 600, marginTop: 4 }}>{l.teacher}</p>}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, color: "#6b7570", fontSize: 14, marginTop: 10 }}>
-        {l.time && <span>🕐 {l.time}</span>}
-        {l.area && <span>📍 {l.area}</span>}
-        {l.location && <span>🕌 {l.location}</span>}
+      {l.teacher && <p className="text-sage-600 font-semibold mt-1">{l.teacher}</p>}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500 mt-2.5">
+        {l.time && <span className="flex items-center gap-1"><Clock size={14} /> {l.time}</span>}
+        {l.area && <span className="flex items-center gap-1"><MapPin size={14} /> {l.area}</span>}
+        {l.location && <span className="flex items-center gap-1"><Building2 size={14} /> {l.location}</span>}
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-        {maps && <a className="rw-btn primary" href={maps} target="_blank" rel="noopener noreferrer">🗺️ الموقع</a>}
-        {women ? (
-          // Women's lessons: no Zoom (protect voices) — join a WhatsApp/Telegram channel instead.
-          l.channel_link
-            ? <a className="rw-btn channel" href={l.channel_link} target="_blank" rel="noopener noreferrer">💬 انضمي للقناة</a>
-            : (wa && <a className="rw-btn channel" href={wa} target="_blank" rel="noopener noreferrer">💬 قناة الواتساب</a>)
-        ) : (
-          // Men's lessons (for everyone): Zoom allowed.
-          l.zoom_link && <a className="rw-btn zoom" href={l.zoom_link} target="_blank" rel="noopener noreferrer">🎥 انضم عبر زوم</a>
+      <div className="flex flex-wrap gap-2 mt-4">
+        {maps && (
+          <a className={`${btn} border border-sage-300 text-sage-600 bg-white hover:bg-sage-100`} href={maps} target="_blank" rel="noopener noreferrer">
+            <MapPin size={15} /> الموقع
+          </a>
         )}
-        {l.instagram && <a className="rw-btn" href={`https://instagram.com/${l.instagram}`} target="_blank" rel="noopener noreferrer">📷 @{l.instagram}</a>}
-        {!women && wa && <a className="rw-btn" href={wa} target="_blank" rel="noopener noreferrer">💬 {l.phone}</a>}
+        {women ? (
+          (l.channel_link || wa) && (
+            <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link || wa} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={15} /> {l.channel_link ? "انضمي للقناة" : "قناة الواتساب"}
+            </a>
+          )
+        ) : (
+          l.zoom_link && (
+            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
+              <Video size={15} /> انضم عبر زوم
+            </a>
+          )
+        )}
+        {l.instagram && (
+          <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={`https://instagram.com/${l.instagram}`} target="_blank" rel="noopener noreferrer">
+            <Instagram size={15} /> @{l.instagram}
+          </a>
+        )}
+        {!women && wa && (
+          <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={wa} target="_blank" rel="noopener noreferrer">
+            <MessageCircle size={15} /> {l.phone}
+          </a>
+        )}
       </div>
-    </div>
+    </article>
   );
 }
