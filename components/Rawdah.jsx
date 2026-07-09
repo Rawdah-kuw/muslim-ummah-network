@@ -11,8 +11,17 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishabl
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-// Existing Rawdah data is women's lessons — default to "نساء" when unset.
-const genderOf = (l) => (l.gender === "رجال" ? "رجال" : "نساء");
+// Gender: explicit field wins; otherwise infer from the teacher's honorific.
+// (Existing Rawdah data is women's lessons, so default to "نساء".)
+const FEMALE_RE = /الشيخة|الدكتورة|الأستاذة|الواعظة|الباحثة|المعلمة|الداعية/;
+const MALE_RE = /الشيخ\s|الأستاذ\s|الدكتور\s|الداعي\s/;
+function genderOf(l) {
+  if (l.gender === "رجال") return "رجال";
+  if (l.gender === "نساء") return "نساء";
+  const teach = l.teacher || "";
+  if (MALE_RE.test(teach) && !FEMALE_RE.test(teach)) return "رجال";
+  return "نساء";
+}
 const todayName = () => DAYS[new Date().getDay()];
 
 // Main WhatsApp group — where zoom links / lesson details are posted, used as the
@@ -37,7 +46,14 @@ export default function Rawdah({ t }) {
       try {
         const { data, error } = await db.from("lessons").select("*").eq("is_published", true).order("time", { ascending: true });
         if (error) throw error;
-        const rows = data || [];
+        // Remove duplicate rows (same lesson entered 2–3 times) — keep first.
+        const seen = new Set();
+        const rows = (data || []).filter((l) => {
+          const key = `${l.title}|${l.teacher}|${l.day}|${l.time}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
         setLessons(rows);
         // If today has no lessons, jump to the first day that does — so it never looks empty.
         const td = todayName();
@@ -162,6 +178,15 @@ function Card({ l, showDay }) {
         {l.area && <span className="flex items-center gap-1"><MapPin size={14} /> {l.area}</span>}
         {l.location && <span className="flex items-center gap-1"><Building2 size={14} /> {l.location}</span>}
       </div>
+      {Array.isArray(l.types) && l.types.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {l.types.map((tp) => (
+            <span key={tp} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+              tp === "اونلاين" ? "bg-[#e6eef5] text-[#5a7a8a]" : "bg-sage-100 text-sage-700"
+            }`}>{tp === "اونلاين" ? "🖥️ اونلاين" : tp === "حضوري" ? "🕌 حضوري" : tp}</span>
+          ))}
+        </div>
+      )}
 
       {!ended && (
         <div className="flex flex-wrap gap-2 mt-4">
