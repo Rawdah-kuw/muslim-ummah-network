@@ -33,7 +33,14 @@ export default function Rawdah({ t }) {
       try {
         const { data, error } = await db.from("lessons").select("*").eq("is_published", true).order("time", { ascending: true });
         if (error) throw error;
-        setLessons(data || []);
+        const rows = data || [];
+        setLessons(rows);
+        // If today has no lessons, jump to the first day that does — so it never looks empty.
+        const td = todayName();
+        if (!rows.some((l) => l.day === td)) {
+          const firstDay = DAYS.find((dn) => rows.some((l) => l.day === dn));
+          if (firstDay) setDay(firstDay);
+        }
       } catch {
         setErr(true);
       } finally {

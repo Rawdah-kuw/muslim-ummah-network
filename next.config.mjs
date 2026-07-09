@@ -12,7 +12,7 @@ const csp = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "object-src 'self'",
   "frame-src 'self' https://cse.google.com https://www.google.com",
-  "connect-src 'self' https://cse.google.com https://www.google.com https://clients1.google.com https://*.google.com https://*.gstatic.com",
+  "connect-src 'self' https://cse.google.com https://www.google.com https://clients1.google.com https://*.google.com https://*.gstatic.com https://*.supabase.co",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'self'",
