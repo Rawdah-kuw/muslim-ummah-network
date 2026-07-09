@@ -28,6 +28,12 @@ const todayName = () => DAYS[new Date().getDay()];
 // fallback for any lesson that has no dedicated group/link.
 const GROUP_LINK = "https://chat.whatsapp.com/J394CWBV7zw3aIexoulZAQ";
 
+function fmtDate(d) {
+  if (!d) return "";
+  const p = String(d).split("-");
+  return p.length === 3 ? `${+p[2]}/${+p[1]}/${p[0]}` : String(d);
+}
+
 const chip = (active) =>
   `px-4 py-2 rounded-full text-sm font-medium transition-all border ${
     active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
@@ -167,12 +173,14 @@ function Card({ l, showDay }) {
               {women ? "للنساء" : "للجميع"}
             </span>
           )}
-          {showDay && l.day && (
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-200 text-pine-800">{l.day}</span>
-          )}
         </div>
       </div>
       {l.teacher && <p className="text-sage-600 font-semibold mt-1">{l.teacher}</p>}
+      <div className="flex items-center gap-2 mt-1.5 text-sm">
+        <span className="font-bold text-pine-800">{l.day}</span>
+        {l.lesson_date && <span className="text-slate-400">— {fmtDate(l.lesson_date)}</span>}
+        {l.is_recurring && <span className="text-xs text-sage-600 font-medium">(أسبوعي)</span>}
+      </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500 mt-2.5">
         {l.time && <span className="flex items-center gap-1"><Clock size={14} /> {l.time}</span>}
         {l.area && <span className="flex items-center gap-1"><MapPin size={14} /> {l.area}</span>}
@@ -205,8 +213,8 @@ function Card({ l, showDay }) {
               <Video size={15} /> انضم عبر زوم
             </a>
           ) : (
-            <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={GROUP_LINK} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={15} /> وين الدرس؟ (قروب)
+            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={GROUP_LINK} target="_blank" rel="noopener noreferrer">
+              <Video size={15} /> لرابط الزوم
             </a>
           )}
           {l.instagram && (
