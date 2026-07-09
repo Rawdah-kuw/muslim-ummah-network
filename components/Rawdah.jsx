@@ -15,6 +15,10 @@ const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربع�
 const genderOf = (l) => (l.gender === "رجال" ? "رجال" : "نساء");
 const todayName = () => DAYS[new Date().getDay()];
 
+// Main WhatsApp group — where zoom links / lesson details are posted, used as the
+// fallback for any lesson that has no dedicated group/link.
+const GROUP_LINK = "https://chat.whatsapp.com/J394CWBV7zw3aIexoulZAQ";
+
 const chip = (active) =>
   `px-4 py-2 rounded-full text-sm font-medium transition-all border ${
     active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
@@ -129,17 +133,24 @@ function Card({ l, showDay }) {
   const women = genderOf(l) === "نساء";
   const maps = l.location ? `https://maps.google.com/?q=${encodeURIComponent((l.location || "") + " " + (l.area || ""))}` : null;
   const wa = l.phone ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}` : null;
-  // Subtle audience tint in light mode; neutral surface in dark mode.
-  const tint = women ? "bg-[#fbf1f3] dark:bg-white" : "bg-[#eef4fa] dark:bg-white";
+  // A dated, non-recurring lesson whose date has passed is "ended" (greyed out).
+  const ended = !!l.lesson_date && !l.is_recurring && new Date(`${l.lesson_date}T23:59:59`) < new Date();
+  const tint = ended
+    ? "bg-pearl-100 dark:bg-white opacity-70"
+    : women ? "bg-[#fbf1f3] dark:bg-white" : "bg-[#eef4fa] dark:bg-white";
   const btn = "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors";
   return (
     <article className={`rounded-2xl p-5 border border-pearl-200 hover:shadow-pine transition-shadow ${tint}`}>
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-bold text-ink leading-snug">{l.title}</h3>
         <div className="flex gap-1.5 shrink-0">
-          <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-cream ${women ? "bg-[#b58d88]" : "bg-[#5a7a8a]"}`}>
-            {women ? "للنساء" : "للجميع"}
-          </span>
+          {ended ? (
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-300 text-slate-500">انتهى</span>
+          ) : (
+            <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-cream ${women ? "bg-[#b58d88]" : "bg-[#5a7a8a]"}`}>
+              {women ? "للنساء" : "للجميع"}
+            </span>
+          )}
           {showDay && l.day && (
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-200 text-pine-800">{l.day}</span>
           )}
@@ -152,32 +163,39 @@ function Card({ l, showDay }) {
         {l.location && <span className="flex items-center gap-1"><Building2 size={14} /> {l.location}</span>}
       </div>
 
-      <div className="flex flex-wrap gap-2 mt-4">
-        {maps && (
-          <a className={`${btn} border border-sage-300 text-sage-600 bg-white hover:bg-sage-100`} href={maps} target="_blank" rel="noopener noreferrer">
-            <MapPin size={15} /> الموقع
-          </a>
-        )}
-        {/* Join / contact — falls back to WhatsApp when no dedicated link exists. */}
-        {women && l.channel_link ? (
-          <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link} target="_blank" rel="noopener noreferrer">
-            <MessageCircle size={15} /> انضمي للقناة
-          </a>
-        ) : !women && l.zoom_link ? (
-          <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
-            <Video size={15} /> انضم عبر زوم
-          </a>
-        ) : wa ? (
-          <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={wa} target="_blank" rel="noopener noreferrer">
-            <MessageCircle size={15} /> تواصل عبر واتساب
-          </a>
-        ) : null}
-        {l.instagram && (
-          <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={`https://instagram.com/${l.instagram}`} target="_blank" rel="noopener noreferrer">
-            <Instagram size={15} /> @{l.instagram}
-          </a>
-        )}
-      </div>
+      {!ended && (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {maps && (
+            <a className={`${btn} border border-sage-300 text-sage-600 bg-white hover:bg-sage-100`} href={maps} target="_blank" rel="noopener noreferrer">
+              <MapPin size={15} /> الموقع
+            </a>
+          )}
+          {/* Join — dedicated link if present, otherwise the main WhatsApp group ("where's the lesson?"). */}
+          {women && l.channel_link ? (
+            <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={15} /> انضمي للقناة
+            </a>
+          ) : !women && l.zoom_link ? (
+            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
+              <Video size={15} /> انضم عبر زوم
+            </a>
+          ) : (
+            <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={GROUP_LINK} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={15} /> وين الدرس؟ (قروب)
+            </a>
+          )}
+          {l.instagram && (
+            <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={`https://instagram.com/${l.instagram}`} target="_blank" rel="noopener noreferrer">
+              <Instagram size={15} /> @{l.instagram}
+            </a>
+          )}
+          {wa && (
+            <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={wa} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={15} /> واتساب الداعية
+            </a>
+          )}
+        </div>
+      )}
     </article>
   );
 }
