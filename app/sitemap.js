@@ -15,6 +15,7 @@ export default function sitemap() {
     urls.push({ url: `${BASE}/${lang}/library`, lastModified: now, changeFrequency: "weekly", priority: 0.9 });
     urls.push({ url: `${BASE}/${lang}/curriculum`, lastModified: now, changeFrequency: "weekly", priority: 0.9 });
     urls.push({ url: `${BASE}/${lang}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 });
+    urls.push({ url: `${BASE}/${lang}/rawdah`, lastModified: now, changeFrequency: "daily", priority: 0.8 });
     urls.push({ url: `${BASE}/${lang}/curated/youtube`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
     urls.push({ url: `${BASE}/${lang}/curated/instagram`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
 
