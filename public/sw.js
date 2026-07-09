@@ -1,5 +1,5 @@
 // Minimal service worker — enables PWA installability + light offline fallback.
-const CACHE = "mu-cache-v1";
+const CACHE = "mu-cache-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -11,10 +11,14 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// Network-first for navigations (always fresh), fall back to cache when offline.
+// Network-first for SAME-ORIGIN GET only. Never touch cross-origin requests
+// (Supabase, external APIs) — let the browser handle them directly.
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
+  let url;
+  try { url = new URL(req.url); } catch { return; }
+  if (url.origin !== self.location.origin) return;
   e.respondWith(
     fetch(req)
       .then((res) => {
