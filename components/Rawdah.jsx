@@ -69,6 +69,13 @@ export default function Rawdah({ t }) {
         <SectionHead icon={Sprout} kicker="مجالس ودروس الذكر" title="روضة"
           desc="دليل أسبوعي لمجالس ودروس الذكر — بحث وتصفية حسب اليوم والفئة." />
 
+        <div className="mb-7 text-center rounded-2xl border border-pearl-200 bg-white px-6 py-5">
+          <p className="font-quran text-lg md:text-2xl text-sage-600 leading-loose">
+            «إذا مَرَرْتُم برياضِ الجنةِ فارْتَعُوا». قيل: وما رياضُ الجنة؟ قال: «حِلَقُ الذِّكْر».
+          </p>
+          <p className="text-xs text-slate-400 mt-2">رواه الترمذي</p>
+        </div>
+
         <input
           value={q} onChange={(e) => setQ(e.target.value)}
           placeholder="ابحثي باسم الداعية أو العنوان أو المنطقة أو المسجد…"
@@ -151,27 +158,23 @@ function Card({ l, showDay }) {
             <MapPin size={15} /> الموقع
           </a>
         )}
-        {women ? (
-          (l.channel_link || wa) && (
-            <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link || wa} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={15} /> {l.channel_link ? "انضمي للقناة" : "قناة الواتساب"}
-            </a>
-          )
-        ) : (
-          l.zoom_link && (
-            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
-              <Video size={15} /> انضم عبر زوم
-            </a>
-          )
-        )}
+        {/* Join / contact — falls back to WhatsApp when no dedicated link exists. */}
+        {women && l.channel_link ? (
+          <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link} target="_blank" rel="noopener noreferrer">
+            <MessageCircle size={15} /> انضمي للقناة
+          </a>
+        ) : !women && l.zoom_link ? (
+          <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
+            <Video size={15} /> انضم عبر زوم
+          </a>
+        ) : wa ? (
+          <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={wa} target="_blank" rel="noopener noreferrer">
+            <MessageCircle size={15} /> تواصل عبر واتساب
+          </a>
+        ) : null}
         {l.instagram && (
           <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={`https://instagram.com/${l.instagram}`} target="_blank" rel="noopener noreferrer">
             <Instagram size={15} /> @{l.instagram}
-          </a>
-        )}
-        {!women && wa && (
-          <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={wa} target="_blank" rel="noopener noreferrer">
-            <MessageCircle size={15} /> {l.phone}
           </a>
         )}
       </div>
