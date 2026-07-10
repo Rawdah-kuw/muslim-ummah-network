@@ -220,7 +220,7 @@ function Card({ l, showDay }) {
           )}
           {wa && (
             <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={wa} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={15} /> واتساب الداعية
+              <MessageCircle size={15} /> واتساب
             </a>
           )}
         </div>
