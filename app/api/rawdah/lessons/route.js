@@ -51,14 +51,16 @@ function nextDateForDay(day) {
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
 }
 
-// Delete non-recurring lessons whose date is before yesterday (Kuwait time).
+// Delete non-recurring lessons that are past-dated OR have no date at all.
+// (Recurring weekly lessons are always kept.)
 async function cleanupOld(client) {
   const kw = new Date(Date.now() + 3 * 3600 * 1000);
   kw.setUTCDate(kw.getUTCDate() - 1);
   const cutoff = kw.toISOString().split("T")[0];
-  const { data: old } = await client.from("lessons").select("id, is_recurring, lesson_date")
-    .not("lesson_date", "is", null).lt("lesson_date", cutoff);
-  const ids = (old || []).filter((l) => !l.is_recurring).map((l) => l.id);
+  const { data: rows } = await client.from("lessons").select("id, is_recurring, lesson_date");
+  const ids = (rows || [])
+    .filter((l) => !l.is_recurring && (!l.lesson_date || l.lesson_date < cutoff))
+    .map((l) => l.id);
   if (ids.length) await client.from("lessons").delete().in("id", ids);
   return ids.length;
 }
@@ -110,6 +112,10 @@ export async function PATCH(req) {
   const body = await req.json().catch(() => ({}));
   if (!body.id) return Response.json({ error: "no-id" }, { status: 400 });
   const fields = pick(body);
+  // Keep the no-dateless rule: a non-recurring lesson always gets a date.
+  if (!fields.lesson_date && fields.is_recurring !== true && fields.day) {
+    fields.lesson_date = nextDateForDay(fields.day);
+  }
   fields.updated_at = new Date().toISOString();
   const { data, error } = await db().from("lessons").update(fields).eq("id", body.id).select();
   if (error) return Response.json({ error: error.message }, { status: 500 });
