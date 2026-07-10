@@ -138,17 +138,25 @@ export async function POST(req) {
 
   // Restrict to allowed chats. If none configured, reveal the chat id to help setup.
   const allowed = (process.env.TELEGRAM_ALLOWED_CHAT || "").split(",").map((s) => s.trim()).filter(Boolean);
+  console.log("RAWDAH_TG start", JSON.stringify({
+    chatId, allowed, hasPhoto: !!(msg.photo && msg.photo.length), hasText: !!(msg.caption || msg.text),
+    hasTG: !!TG, hasSERVICE: !!SERVICE, hasKey: !!process.env.ANTHROPIC_API_KEY,
+  }));
   if (allowed.length === 0) {
     await reply(chatId, `مرحبًا 👋 معرّف هذه المحادثة هو:\n${chatId}\n\nأضيفيه في المتغيّر TELEGRAM_ALLOWED_CHAT في Vercel لتفعيل الإضافة التلقائية.`);
     return Response.json({ ok: true });
   }
-  if (!allowed.includes(String(chatId))) return Response.json({ ok: true });
+  if (!allowed.includes(String(chatId))) {
+    console.log("RAWDAH_TG chat-not-allowed", chatId);
+    return Response.json({ ok: true });
+  }
 
   // Build the content for Claude (photo caption or plain text).
   const caption = (msg.caption || msg.text || "").trim();
   let content = null;
   if (msg.photo && msg.photo.length) {
     const img = await downloadPhoto(msg.photo[msg.photo.length - 1].file_id);
+    console.log("RAWDAH_TG photo-download", !!img);
     if (img) {
       content = [{ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } },
         { type: "text", text: PROMPT + (caption ? `\n\nالتعليق المرفق: ${caption}` : "") }];
@@ -156,15 +164,17 @@ export async function POST(req) {
   } else if (caption) {
     content = [{ type: "text", text: PROMPT + `\n\nالنص التالي من منشور تلغرام:\n${caption}` }];
   }
-  if (!content) return Response.json({ ok: true });
+  if (!content) { console.log("RAWDAH_TG no-content"); return Response.json({ ok: true }); }
 
   const result = await callClaude(content);
+  console.log("RAWDAH_TG analyze", JSON.stringify(result).slice(0, 400));
   if (result.error) {
     await reply(chatId, result.error === "ليس بوستر درس" ? "لم أتعرّف على درس في هذا المنشور." : "تعذّر تحليل المنشور، حاولي مرة أخرى.");
     return Response.json({ ok: true });
   }
   const client = createClient(SUPA_URL, SERVICE, { auth: { persistSession: false } });
   const { inserted, skipped } = await insertLessons(client, result.lessons);
+  console.log("RAWDAH_TG insert", inserted, skipped);
   const parts = [];
   if (inserted) parts.push(`✅ أُضيف ${inserted} درس`);
   if (skipped) parts.push(`↩️ تُجوهل ${skipped} مكرّر`);
