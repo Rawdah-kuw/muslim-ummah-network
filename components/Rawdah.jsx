@@ -55,6 +55,7 @@ export default function Rawdah({ t }) {
         // Remove duplicate rows (same lesson entered 2–3 times) — keep first.
         const seen = new Set();
         const rows = (data || []).filter((l) => {
+          if (l.is_paused) return false; // hide temporarily-paused recurring lessons
           const key = `${l.title}|${l.teacher}|${l.day}|${l.time}`;
           if (seen.has(key)) return false;
           seen.add(key);
