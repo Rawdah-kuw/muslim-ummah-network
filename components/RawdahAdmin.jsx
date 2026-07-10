@@ -19,6 +19,12 @@ function fileToBase64(file) {
   });
 }
 
+function fmtDate(d) {
+  if (!d) return "";
+  const p = String(d).split("-");
+  return p.length === 3 ? `${+p[2]}/${+p[1]}/${p[0]}` : d;
+}
+
 const inp = "w-full px-3 py-2 rounded-lg border border-pearl-300 bg-white text-ink text-sm outline-none focus:border-sage-300";
 const lbl = "block text-xs font-semibold text-slate-500 mb-1";
 const btn = "px-4 py-2 rounded-lg text-sm font-medium transition-colors";
@@ -94,21 +100,45 @@ export default function RawdahAdmin() {
     if (await loadExisting()) { setAuthed(true); setMsg(""); }
   }
 
+  async function postLesson(lesson) {
+    const r = await fetch("/api/rawdah/lessons", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ lessons: [lesson] }) });
+    return r.json();
+  }
+  const isComplete = (l) => !!(l.title && l.teacher && l.time);
+
   async function onFiles(e) {
     const files = [...e.target.files];
     e.target.value = "";
     setBusy(true); setMsg("جارٍ تحليل الملصقات…");
+    let published = 0, review = 0;
+    const errors = [];
     for (const f of files) {
       try {
         const img = await fileToBase64(f);
         const r = await fetch("/api/rawdah/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: img, adminPassword: pass }) });
         const d = await r.json();
-        if (d.error) { setMsg("خطأ: " + d.error); continue; }
+        if (d.error) { errors.push(d.error); continue; }
+        if (d.data?.error) { errors.push(d.data.error); continue; }
         const lessons = (d.data?.lessons || []).map((l) => ({ ...EMPTY, ...l }));
-        setDrafts((prev) => [...prev, ...lessons]);
-      } catch (err) { setMsg("خطأ: " + err.message); }
+        if (!lessons.length) { errors.push("لم يُستخرج أي درس من هذه الصورة"); continue; }
+        for (const l of lessons) {
+          if (isComplete(l)) {
+            const res = await postLesson({ ...l, is_published: true });
+            if (res.error) { errors.push(res.error); setDrafts((p) => [...p, l]); review++; }
+            else published++;
+          } else {
+            setDrafts((p) => [...p, l]); review++;
+          }
+        }
+      } catch (err) { errors.push(err.message); }
     }
-    setBusy(false); setMsg("تمّ التحليل — راجعي وعدّلي ثم انشري.");
+    setBusy(false);
+    await loadExisting();
+    const parts = [];
+    if (published) parts.push(`نُشِر ${published} تلقائيًا ✓`);
+    if (review) parts.push(`${review} بحاجة لمراجعة أدناه`);
+    if (errors.length) parts.push(`تنبيه: ${errors.join(" · ")}`);
+    setMsg(parts.join(" — ") || "لم يُستخرج أي درس");
   }
 
   async function publishDraft(i) {
@@ -188,37 +218,55 @@ export default function RawdahAdmin() {
           </div>
         )}
 
-        {/* Existing lessons */}
+        {/* Existing lessons — grouped by day */}
         <h2 className="font-bold text-pine-800 mb-3">الدروس ({existing.length})</h2>
-        <div className="space-y-3">
-          {existing.map((l) => (
-            <div key={l.id} className="bg-white rounded-xl border border-pearl-200 p-4">
-              {editing && editing.id === l.id ? (
-                <>
-                  <LessonForm value={editing} onChange={setEditing} />
-                  <div className="flex gap-2 mt-4">
-                    <button className={`${btn} bg-sage-600 text-cream`} disabled={busy} onClick={saveEdit}>حفظ</button>
-                    <button className={`${btn} border border-pearl-300 text-slate-500`} onClick={() => setEditing(null)}>إلغاء</button>
+        {[...DAYS, "غير محدد"].map((day) => {
+          const items = existing
+            .filter((l) => (l.day || "غير محدد") === day)
+            .sort((a, b) => (a.lesson_date || "").localeCompare(b.lesson_date || "") || (a.time || "").localeCompare(b.time || ""));
+          if (!items.length) return null;
+          return (
+            <div key={day} className="mb-5">
+              <h3 className="text-sm font-bold text-pine-700 mb-2 border-b border-pearl-200 pb-1">
+                {day} <span className="text-xs text-slate-400">({items.length})</span>
+              </h3>
+              <div className="space-y-2">
+                {items.map((l) => (
+                  <div key={l.id} className="bg-white rounded-xl border border-pearl-200 p-4">
+                    {editing && editing.id === l.id ? (
+                      <>
+                        <LessonForm value={editing} onChange={setEditing} />
+                        <div className="flex gap-2 mt-4">
+                          <button className={`${btn} bg-sage-600 text-cream`} disabled={busy} onClick={saveEdit}>حفظ</button>
+                          <button className={`${btn} border border-pearl-300 text-slate-500`} onClick={() => setEditing(null)}>إلغاء</button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <p className="font-bold text-ink truncate">{l.title || "—"} <span className="text-xs text-slate-400">· {l.gender || "نساء"}</span></p>
+                          <p className="text-xs text-slate-500 truncate">
+                            {l.teacher}
+                            {l.time ? ` · ${l.time}` : ""}
+                            {l.lesson_date ? ` · ${fmtDate(l.lesson_date)}` : (l.is_recurring ? " · أسبوعي" : "")}
+                            {l.area ? ` · ${l.area}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <button className={`${btn} text-xs ${l.is_published ? "bg-sage-100 text-sage-700" : "bg-pearl-200 text-slate-500"}`} onClick={() => togglePublish(l)}>
+                            {l.is_published ? "منشور" : "مخفي"}
+                          </button>
+                          <button className={`${btn} text-xs border border-pearl-300 text-slate-600`} onClick={() => setEditing({ ...EMPTY, ...l })}>تعديل</button>
+                          <button className={`${btn} text-xs text-red-500`} onClick={() => remove(l.id)}>حذف</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="min-w-0">
-                    <p className="font-bold text-ink truncate">{l.title || "—"} <span className="text-xs text-slate-400">· {l.day} · {l.gender || "نساء"}</span></p>
-                    <p className="text-xs text-slate-500 truncate">{l.teacher} {l.time ? `· ${l.time}` : ""} {l.area ? `· ${l.area}` : ""}</p>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <button className={`${btn} text-xs ${l.is_published ? "bg-sage-100 text-sage-700" : "bg-pearl-200 text-slate-500"}`} onClick={() => togglePublish(l)}>
-                      {l.is_published ? "منشور" : "مخفي"}
-                    </button>
-                    <button className={`${btn} text-xs border border-pearl-300 text-slate-600`} onClick={() => setEditing({ ...EMPTY, ...l })}>تعديل</button>
-                    <button className={`${btn} text-xs text-red-500`} onClick={() => remove(l.id)}>حذف</button>
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </section>
   );
