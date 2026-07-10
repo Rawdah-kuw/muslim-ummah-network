@@ -166,7 +166,7 @@ function Card({ l, showDay }) {
     <article className={`rounded-2xl p-5 border border-pearl-200 hover:shadow-pine transition-shadow ${tint}`}>
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-bold text-ink leading-snug">{l.title}</h3>
-        <div className="flex gap-1.5 shrink-0">
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
           {ended ? (
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-300 text-slate-500">انتهى</span>
           ) : (
@@ -174,6 +174,11 @@ function Card({ l, showDay }) {
               {women ? "للنساء" : "للجميع"}
             </span>
           )}
+          {Array.isArray(l.types) && l.types.map((tp) => (
+            <span key={tp} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+              tp === "اونلاين" ? "bg-[#e6eef5] text-[#5a7a8a]" : "bg-sage-100 text-sage-700"
+            }`}>{tp === "اونلاين" ? "🖥️ اونلاين" : tp === "حضوري" ? "🕌 حضوري" : tp}</span>
+          ))}
         </div>
       </div>
       {l.teacher && <p className="text-sage-600 font-semibold mt-1">{l.teacher}</p>}
@@ -187,16 +192,6 @@ function Card({ l, showDay }) {
         {l.area && <span className="flex items-center gap-1"><MapPin size={14} /> {l.area}</span>}
         {l.location && <span className="flex items-center gap-1"><Building2 size={14} /> {l.location}</span>}
       </div>
-      {Array.isArray(l.types) && l.types.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-2.5">
-          {l.types.map((tp) => (
-            <span key={tp} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-              tp === "اونلاين" ? "bg-[#e6eef5] text-[#5a7a8a]" : "bg-sage-100 text-sage-700"
-            }`}>{tp === "اونلاين" ? "🖥️ اونلاين" : tp === "حضوري" ? "🕌 حضوري" : tp}</span>
-          ))}
-        </div>
-      )}
-
       {!ended && (
         <div className="flex flex-wrap gap-2 mt-4">
           {maps && (
