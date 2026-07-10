@@ -51,6 +51,23 @@ function nextDateForDay(day) {
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
 }
 
+// Arabic weekday name for a YYYY-MM-DD string.
+function weekdayOf(dateStr) {
+  if (!dateStr) return null;
+  const dt = new Date(dateStr + "T00:00:00Z");
+  return DAYS_AR[dt.getUTCDay()];
+}
+
+// Enforce: recurring → no date; non-recurring → date must match its weekday,
+// otherwise reset to the nearest upcoming date for that day.
+function ensureDate(row) {
+  if (row.is_recurring) { row.lesson_date = null; return; }
+  if (!row.day) return;
+  if (!row.lesson_date || weekdayOf(row.lesson_date) !== row.day) {
+    row.lesson_date = nextDateForDay(row.day);
+  }
+}
+
 // Delete non-recurring lessons that are past-dated OR have no date at all.
 // (Recurring weekly lessons are always kept.)
 async function cleanupOld(client) {
@@ -65,12 +82,20 @@ async function cleanupOld(client) {
   return ids.length;
 }
 
+// Fix existing rows whose stored date doesn't match their weekday.
+async function healDates(client) {
+  const { data: rows } = await client.from("lessons").select("id, day, lesson_date, is_recurring");
+  const fixes = (rows || []).filter((l) => !l.is_recurring && l.day && l.lesson_date && weekdayOf(l.lesson_date) !== l.day);
+  for (const l of fixes) await client.from("lessons").update({ lesson_date: nextDateForDay(l.day) }).eq("id", l.id);
+  return fixes.length;
+}
+
 export async function GET(req) {
   if (!authed(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
   const client = db();
   let cleaned = 0;
-  try { cleaned = await cleanupOld(client); } catch { /* ignore */ }
+  try { cleaned = await cleanupOld(client); await healDates(client); } catch { /* ignore */ }
   const { data, error } = await client.from("lessons").select("*").order("created_at", { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ lessons: data, cleaned });
@@ -87,7 +112,7 @@ export async function POST(req) {
   const insertedRows = [];
   let skipped = 0;
   for (const row of incoming) {
-    if (!row.lesson_date && !row.is_recurring) row.lesson_date = nextDateForDay(row.day);
+    ensureDate(row);
     // Smart duplicate check against existing lessons on the same day.
     const { data: existing } = await client.from("lessons")
       .select("id, title, teacher, lesson_date, is_recurring").eq("day", row.day);
@@ -112,10 +137,8 @@ export async function PATCH(req) {
   const body = await req.json().catch(() => ({}));
   if (!body.id) return Response.json({ error: "no-id" }, { status: 400 });
   const fields = pick(body);
-  // Keep the no-dateless rule: a non-recurring lesson always gets a date.
-  if (!fields.lesson_date && fields.is_recurring !== true && fields.day) {
-    fields.lesson_date = nextDateForDay(fields.day);
-  }
+  // Keep date consistent with the weekday (only when day is part of this update).
+  if (fields.day !== undefined) ensureDate(fields);
   fields.updated_at = new Date().toISOString();
   const { data, error } = await db().from("lessons").update(fields).eq("id", body.id).select();
   if (error) return Response.json({ error: error.message }, { status: 500 });
