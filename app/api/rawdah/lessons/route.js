@@ -71,9 +71,8 @@ function ensureDate(row) {
 // Delete non-recurring lessons that are past-dated OR have no date at all.
 // (Recurring weekly lessons are always kept.)
 async function cleanupOld(client) {
-  const kw = new Date(Date.now() + 3 * 3600 * 1000);
-  kw.setUTCDate(kw.getUTCDate() - 1);
-  const cutoff = kw.toISOString().split("T")[0];
+  // Delete once the lesson's day has passed: any date strictly before today (Kuwait).
+  const cutoff = new Date(Date.now() + 3 * 3600 * 1000).toISOString().split("T")[0];
   const { data: rows } = await client.from("lessons").select("id, is_recurring, lesson_date");
   const ids = (rows || [])
     .filter((l) => !l.is_recurring && (!l.lesson_date || l.lesson_date < cutoff))
