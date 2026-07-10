@@ -54,8 +54,12 @@ export default function Rawdah({ t }) {
         if (error) throw error;
         // Remove duplicate rows (same lesson entered 2–3 times) — keep first.
         const seen = new Set();
+        const horizon = new Date();
+        horizon.setDate(horizon.getDate() + 7); // show only the coming week
         const rows = (data || []).filter((l) => {
           if (l.is_paused) return false; // hide temporarily-paused recurring lessons
+          // Hide dated lessons more than a week away — they appear a week before.
+          if (!l.is_recurring && l.lesson_date && new Date(`${l.lesson_date}T00:00:00`) > horizon) return false;
           const key = `${l.title}|${l.teacher}|${l.day}|${l.time}`;
           if (seen.has(key)) return false;
           seen.add(key);
@@ -164,23 +168,21 @@ function Card({ l, showDay }) {
   const btn = "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors";
   return (
     <article className={`rounded-2xl p-5 border border-pearl-200 hover:shadow-pine transition-shadow ${tint}`}>
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-lg font-bold text-ink leading-snug">{l.title}</h3>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          {ended ? (
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-300 text-slate-500">انتهى</span>
-          ) : (
-            <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-cream ${women ? "bg-[#b58d88]" : "bg-[#5a7a8a]"}`}>
-              {women ? "للنساء" : "للجميع"}
-            </span>
-          )}
-          {Array.isArray(l.types) && l.types.map((tp) => (
-            <span key={tp} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-              tp === "اونلاين" ? "bg-[#e6eef5] text-[#5a7a8a]" : "bg-sage-100 text-sage-700"
-            }`}>{tp === "اونلاين" ? "🖥️ اونلاين" : tp === "حضوري" ? "🕌 حضوري" : tp}</span>
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        {ended ? (
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-pearl-300 text-slate-500">انتهى</span>
+        ) : (
+          <span className={`px-2.5 py-1 rounded-full text-xs font-bold text-cream ${women ? "bg-[#b58d88]" : "bg-[#5a7a8a]"}`}>
+            {women ? "للنساء" : "للجميع"}
+          </span>
+        )}
+        {Array.isArray(l.types) && l.types.map((tp) => (
+          <span key={tp} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+            tp === "اونلاين" ? "bg-[#e6eef5] text-[#5a7a8a]" : "bg-sage-100 text-sage-700"
+          }`}>{tp === "اونلاين" ? "🖥️ اونلاين" : tp === "حضوري" ? "🕌 حضوري" : tp}</span>
+        ))}
       </div>
+      <h3 className="text-lg font-bold text-ink leading-snug">{l.title}</h3>
       {l.teacher && <p className="text-sage-600 font-semibold mt-1">{l.teacher}</p>}
       <div className="flex items-center gap-2 mt-1.5 text-sm">
         <span className="font-bold text-pine-800">{l.day}</span>
