@@ -66,10 +66,12 @@ export default function Rawdah({ t }) {
           return true;
         });
         setLessons(rows);
-        // If today has no lessons, jump to the first day that does — so it never looks empty.
+        // Default to today; if today has no lessons, jump to the next upcoming day that does.
         const td = todayName();
         if (!rows.some((l) => l.day === td)) {
-          const firstDay = DAYS.find((dn) => rows.some((l) => l.day === dn));
+          const ti = DAYS.indexOf(td);
+          const ordered = ti >= 0 ? [...DAYS.slice(ti), ...DAYS.slice(0, ti)] : DAYS;
+          const firstDay = ordered.find((dn) => rows.some((l) => l.day === dn));
           if (firstDay) setDay(firstDay);
         }
       } catch {
@@ -80,7 +82,11 @@ export default function Rawdah({ t }) {
     })();
   }, []);
 
-  const daysWithLessons = useMemo(() => DAYS.filter((dn) => lessons.some((l) => l.day === dn)), [lessons]);
+  const daysWithLessons = useMemo(() => {
+    const ti = DAYS.indexOf(todayName());
+    const ordered = ti >= 0 ? [...DAYS.slice(ti), ...DAYS.slice(0, ti)] : DAYS;
+    return ordered.filter((dn) => lessons.some((l) => l.day === dn));
+  }, [lessons]);
   const searching = q.trim().length > 0;
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -139,6 +145,10 @@ export default function Rawdah({ t }) {
             {results.length ? `وجدنا ${results.length} نتيجة لـ «${q}»` : `لا توجد نتائج لـ «${q}»`}
           </p>
         )}
+
+        <p className="text-xs text-slate-400 mb-4 flex items-center gap-1.5">
+          <Clock size={13} /> جميع الأوقات بتوقيت الكويت (GMT+3) · All times shown in Kuwait time
+        </p>
 
         {loading ? (
           <p className="text-center text-slate-500 py-16">جارٍ التحميل…</p>
