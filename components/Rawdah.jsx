@@ -34,6 +34,32 @@ function fmtDate(d) {
   return p.length === 3 ? `${+p[2]}/${+p[1]}/${p[0]}` : String(d);
 }
 
+// Convert a time string to minutes-from-midnight for correct chronological sorting.
+function parseTime(t) {
+  if (!t) return 9999;
+  const n = String(t).replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
+  if (/بعد الفجر/.test(t)) return 330;
+  if (/بعد الإشراق|بعد الشروق/.test(t)) return 420;
+  if (/بعد الضحى/.test(t)) return 540;
+  if (/قبل الظهر/.test(t)) return 690;
+  if (/بعد الظهر/.test(t)) return 750;
+  if (/قبل العصر/.test(t)) return 870;
+  if (/بعد العصر/.test(t)) return 960;
+  if (/قبل المغرب/.test(t)) return 1050;
+  if (/بعد المغرب/.test(t)) return 1110;
+  if (/قبل العشاء/.test(t)) return 1170;
+  if (/بعد العشاء/.test(t)) return 1200;
+  const m = n.match(/(\d{1,2}):(\d{2})/);
+  if (!m) return 9999;
+  let h = +m[1];
+  const min = +m[2];
+  const pm = /م|pm|مساء/i.test(n), am = /ص|am|صباح/i.test(n);
+  if (pm && h < 12) h += 12;
+  if (am && h === 12) h = 0;
+  if (!pm && !am && h >= 1 && h <= 7) h += 12;
+  return h * 60 + min;
+}
+
 const chip = (active) =>
   `px-4 py-2 rounded-full text-sm font-medium transition-all border ${
     active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
@@ -97,7 +123,8 @@ export default function Rawdah({ t }) {
     } else {
       out = out.filter((l) => l.day === day);
     }
-    return out;
+    // Sort by real time-of-day (handles ٤:٣٠ م / 10:00 ص / بعد المغرب…).
+    return [...out].sort((a, b) => parseTime(a.time) - parseTime(b.time));
   }, [lessons, q, day, gender, searching]);
 
   return (
