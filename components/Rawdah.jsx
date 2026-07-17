@@ -194,6 +194,92 @@ async function shareLessonImage(l) {
   }, "image/png");
 }
 
+function wrapLines(x, text, maxW) {
+  const words = String(text).split(" ");
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    const t = line ? `${line} ${w}` : w;
+    if (x.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function rowHeight(x, l, S) {
+  x.font = "700 40px Amiri, serif";
+  const lines = Math.min(2, wrapLines(x, l.title || "", S - 260).length || 1);
+  let h = 50 + lines * 52;
+  if (l.teacher || l.time) h += 44;
+  if (l.area || l.location) h += 40;
+  return h + 54;
+}
+function drawScheduleRow(x, l, top, S) {
+  const women = genderOf(l) === "نساء";
+  const accent = women ? "#b58d88" : "#5a7a8a";
+  const xR = S - 110;
+  x.fillStyle = accent; x.beginPath(); x.arc(S - 70, top + 26, 12, 0, Math.PI * 2); x.fill();
+  x.textAlign = "right"; x.direction = "rtl";
+  x.fillStyle = "#1B3B2B"; x.font = "700 40px Amiri, serif";
+  const lines = wrapLines(x, l.title || "", S - 260).slice(0, 2);
+  let ty = top + 46;
+  for (const ln of lines) { x.fillText(ln, xR, ty); ty += 52; }
+  ty += 4;
+  const meta = [l.teacher, l.time].filter(Boolean).join(" · ");
+  if (meta) { x.fillStyle = "#4F7263"; x.font = "600 32px Tajawal, sans-serif"; x.fillText(meta, xR, ty); ty += 44; }
+  const loc = [l.area, l.location].filter(Boolean).join(" · ");
+  if (loc) { x.fillStyle = "#64748b"; x.font = "400 28px Tajawal, sans-serif"; x.fillText(loc, xR, ty); ty += 40; }
+  x.strokeStyle = "#ece4df"; x.lineWidth = 2; x.beginPath(); x.moveTo(80, ty + 12); x.lineTo(S - 80, ty + 12); x.stroke();
+}
+function drawScheduleHeader(x, day, S) {
+  x.fillStyle = "#FDFBF7"; x.fillRect(0, 0, S, 1920);
+  x.fillStyle = "#1B3B2B"; x.fillRect(0, 0, S, 200);
+  x.textAlign = "center"; x.direction = "rtl";
+  x.fillStyle = "#FDFBF7"; x.font = "700 56px Tajawal, sans-serif"; x.fillText(`دروس ${day}`, S / 2, 108);
+  x.fillStyle = "#a8c3b4"; x.font = "500 30px Tajawal, sans-serif"; x.fillText("روضة · مجالس ودروس الذكر", S / 2, 158);
+}
+function drawScheduleFooter(x, S, page, total) {
+  const H = 1920;
+  x.textAlign = "center"; x.direction = "rtl";
+  if (total > 1) { x.fillStyle = "#94A3B8"; x.font = "400 24px Tajawal, sans-serif"; x.fillText(`${page} / ${total}`, S / 2, H - 150); }
+  x.fillStyle = "#94A3B8"; x.font = "400 26px Tajawal, sans-serif"; x.fillText("جميع الأوقات بتوقيت الكويت (GMT+3)", S / 2, H - 96);
+  x.fillStyle = "#1B3B2B"; x.font = "700 32px Tajawal, sans-serif"; x.fillText("شبكة أمة الإسلام · muslimummah.app", S / 2, H - 50);
+}
+async function shareScheduleImage(day, list) {
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch { /* ignore */ }
+  const S = 1080, H = 1920, START = 250, MAXY = H - 180;
+  const m = document.createElement("canvas").getContext("2d");
+  const pages = []; let cur = []; let y = START;
+  for (const l of list) {
+    const h = rowHeight(m, l, S);
+    if (y + h > MAXY && cur.length) { pages.push(cur); cur = []; y = START; }
+    cur.push(l); y += h;
+  }
+  if (cur.length) pages.push(cur);
+
+  const files = [];
+  for (let p = 0; p < pages.length; p++) {
+    const c = document.createElement("canvas"); c.width = S; c.height = H;
+    const x = c.getContext("2d");
+    drawScheduleHeader(x, day, S);
+    let yy = START;
+    for (const l of pages[p]) { drawScheduleRow(x, l, yy, S); yy += rowHeight(x, l, S); }
+    drawScheduleFooter(x, S, p + 1, pages.length);
+    const blob = await new Promise((res) => c.toBlob(res, "image/png"));
+    if (blob) files.push(new File([blob], `rawdah-${day}-${p + 1}.png`, { type: "image/png" }));
+  }
+  if (!files.length) return;
+  if (navigator.canShare && navigator.canShare({ files })) {
+    try { await navigator.share({ files }); return; } catch { return; }
+  }
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  for (const f of files) {
+    const url = URL.createObjectURL(f);
+    if (isIOS) { window.open(url, "_blank"); }
+    else { const a = document.createElement("a"); a.href = url; a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); }
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  }
+}
+
 const chip = (active) =>
   `px-4 py-2 rounded-full text-sm font-medium transition-all border ${
     active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
@@ -322,9 +408,9 @@ export default function Rawdah({ lang = "ar" }) {
           <>
             {!searching && (
               <div className="mb-4">
-                <button type="button" onClick={() => shareText(scheduleText(day, results))}
+                <button type="button" onClick={() => shareScheduleImage(day, results)}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
-                  <Share2 size={15} /> مشاركة جدول {day}
+                  <Share2 size={15} /> مشاركة جدول {day} كصورة
                 </button>
               </div>
             )}
