@@ -183,7 +183,7 @@ async function shareLessonImage(l) {
   const loc = [l.area, l.location].filter(Boolean).join(" · ");
   if (loc) { x.font = "500 36px Tajawal, sans-serif"; x.fillStyle = "#475569"; ty = drawWrapped(x, loc, S / 2, ty, S - 300, 52); ty += 8; }
   const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join("  ·  ");
-  if (contact) { x.fillStyle = "#8792a3"; x.font = "400 32px Tajawal, sans-serif"; x.fillText(contact, S / 2, ty); }
+  if (contact) { x.fillStyle = "#8792a3"; x.font = "400 32px Tajawal, sans-serif"; x.fillText(fit(x, contact, S - 300), S / 2, ty); }
 
   x.fillStyle = "#1B3B2B"; x.font = "700 42px Tajawal, sans-serif"; x.fillText("شبكة أمة الإسلام", S / 2, S - 152);
   x.fillStyle = "#94A3B8"; x.font = "400 28px Tajawal, sans-serif"; x.fillText("muslimummah.app", S / 2, S - 108);
@@ -218,15 +218,23 @@ function wrapLines(x, text, maxW) {
   if (line) lines.push(line);
   return lines;
 }
+// Truncate text with an ellipsis so it fits within maxW (set the font before calling).
+function fit(x, text, maxW) {
+  let t = String(text);
+  if (x.measureText(t).width <= maxW) return t;
+  while (t.length > 1 && x.measureText(`${t}…`).width > maxW) t = t.slice(0, -1);
+  return `${t}…`;
+}
 function rowHeight(x, l, S) {
   x.font = "700 40px Amiri, serif";
   const cardW = S - 140;
-  const titleLines = Math.min(2, wrapLines(x, l.title || "", cardW - 90).length || 1);
-  let h = 80 + titleLines * 50;
+  const titleLines = Math.min(2, wrapLines(x, l.title || "", cardW - 100).length || 1);
+  let h = 84 + titleLines * 50;
   if (l.teacher) h += 44;
-  if ([l.time, l.area, l.location].filter(Boolean).length) h += 40;
+  if (l.time || l.area) h += 38;
+  if (l.location) h += 38;
   if (l.instagram || l.phone) h += 36;
-  return h + 24 + 20;
+  return h + 26 + 20;
 }
 function drawScheduleRow(x, l, top, S) {
   const women = genderOf(l) === "نساء";
@@ -234,31 +242,36 @@ function drawScheduleRow(x, l, top, S) {
   const tint = women ? "#fbf1f3" : "#eef4fa";
   const cardX = 70, cardW = S - 140;
   const slot = rowHeight(x, l, S) - 20;
+  const xR = cardX + cardW - 42, xL = cardX + 42, maxW = cardW - 100;
   x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 28); x.fill();
   x.fillStyle = accent; roundRectPath(x, cardX + cardW - 14, top + 20, 8, slot - 40, 4); x.fill();
-  const xR = cardX + cardW - 42, xL = cardX + 42;
   x.direction = "rtl";
-  // type badges (top-left)
+  // badges: gender first, then type(s) (top-left)
   let px = xL;
+  const badges = [{ t: women ? "للنساء" : "للجميع", bg: accent, fg: "#ffffff" }];
   for (const tp of (Array.isArray(l.types) ? l.types : [])) {
     const online = tp === "اونلاين";
-    x.font = "700 26px Tajawal, sans-serif";
-    const w = x.measureText(tp).width + 40;
-    x.fillStyle = online ? "#dbe7f0" : "#e2ece7"; roundRectPath(x, px, top + 24, w, 44, 22); x.fill();
-    x.fillStyle = online ? "#3f5f70" : "#3e5a4e"; x.textAlign = "center"; x.fillText(tp, px + w / 2, top + 54);
-    px += w + 14;
+    badges.push({ t: tp, bg: online ? "#dbe7f0" : "#e2ece7", fg: online ? "#3f5f70" : "#3e5a4e" });
   }
-  // title + teacher + info (right-aligned)
+  for (const b of badges) {
+    x.font = "700 25px Tajawal, sans-serif";
+    const w = x.measureText(b.t).width + 36;
+    x.fillStyle = b.bg; roundRectPath(x, px, top + 24, w, 42, 21); x.fill();
+    x.fillStyle = b.fg; x.textAlign = "center"; x.fillText(b.t, px + w / 2, top + 52);
+    px += w + 12;
+  }
+  // title + teacher + info (right-aligned, truncated to fit)
   x.textAlign = "right";
   x.fillStyle = "#1B3B2B"; x.font = "700 40px Amiri, serif";
-  const lines = wrapLines(x, l.title || "", cardW - 90).slice(0, 2);
-  let y = top + 80;
+  const lines = wrapLines(x, l.title || "", maxW).slice(0, 2);
+  let y = top + 84;
   for (const ln of lines) { x.fillText(ln, xR, y + 38); y += 50; }
-  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 32px Tajawal, sans-serif"; x.fillText(`مع ${l.teacher}`, xR, y + 34); y += 44; }
-  const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
-  if (info) { x.fillStyle = "#475569"; x.font = "400 30px Tajawal, sans-serif"; x.fillText(info, xR, y + 30); y += 40; }
+  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 32px Tajawal, sans-serif"; x.fillText(fit(x, `مع ${l.teacher}`, maxW), xR, y + 34); y += 44; }
+  const info = [l.time, l.area].filter(Boolean).join("  ·  ");
+  if (info) { x.fillStyle = "#475569"; x.font = "400 30px Tajawal, sans-serif"; x.fillText(fit(x, info, maxW), xR, y + 30); y += 38; }
+  if (l.location) { x.fillStyle = "#64748b"; x.font = "400 29px Tajawal, sans-serif"; x.fillText(fit(x, l.location, maxW), xR, y + 30); y += 38; }
   const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join("  ·  ");
-  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 27px Tajawal, sans-serif"; x.fillText(contact, xR, y + 26); }
+  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 27px Tajawal, sans-serif"; x.fillText(fit(x, contact, maxW), xR, y + 26); }
 }
 function scheduleDate(day, list) {
   const dated = (list || []).find((l) => l.lesson_date && l.day === day && !l.is_recurring);
@@ -313,8 +326,9 @@ async function shareScheduleImage(day, list) {
     if (blob) files.push(new File([blob], `rawdah-${day}-${p + 1}.png`, { type: "image/png" }));
   }
   if (!files.length) return;
-  if (navigator.canShare && navigator.canShare({ files })) {
-    try { await navigator.share({ files }); return; } catch { return; }
+  const caption = `🌿 جدول دروس ${day} — روضة · شبكة أمة الإسلام\nجميع الأوقات بتوقيت الكويت\n${RAWDAH_URL}`;
+  if (navigator.canShare && navigator.canShare({ files, text: caption })) {
+    try { await navigator.share({ files, text: caption }); return; } catch { return; }
   }
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   for (const f of files) {
