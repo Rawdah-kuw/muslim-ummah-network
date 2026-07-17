@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Sprout, MapPin, Video, MessageCircle, Instagram, Clock, Building2 } from "lucide-react";
+import { Sprout, MapPin, Video, MessageCircle, Instagram, Clock, Building2, Share2 } from "lucide-react";
 import SectionHead from "./SectionHead";
 
 // Public (publishable) Supabase credentials — safe to expose; RLS allows reading published lessons only.
@@ -58,6 +58,41 @@ function parseTime(t) {
   if (am && h === 12) h = 0;
   if (!pm && !am && h >= 1 && h <= 7) h += 12;
   return h * 60 + min;
+}
+
+const RAWDAH_URL = "https://muslimummah.app/ar/rawdah";
+
+// Native share sheet (iPhone/Android) with WhatsApp fallback.
+async function shareText(text) {
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try { await navigator.share({ text }); return; } catch { return; }
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+}
+function lessonText(l) {
+  const women = genderOf(l) === "نساء";
+  const dt = l.day + (l.lesson_date ? ` ${fmtDate(l.lesson_date)}` : (l.is_recurring ? " (أسبوعي)" : ""));
+  const loc = [l.area, l.location].filter(Boolean).join(" - ");
+  return [
+    `🌿 ${l.title || ""}`,
+    l.teacher ? `👤 ${l.teacher}` : "",
+    `📅 ${dt}`,
+    l.time ? `🕐 ${l.time} (بتوقيت الكويت)` : "",
+    loc ? `📍 ${loc}` : "",
+    women ? "🌸 درس للنساء" : "👥 للجميع",
+    "",
+    "روضة — شبكة أمة الإسلام",
+    RAWDAH_URL,
+  ].filter(Boolean).join("\n");
+}
+function scheduleText(day, list) {
+  const lines = [`🌿 دروس ${day} — روضة`, ""];
+  for (const l of list) {
+    const bits = [l.title, l.teacher, l.time].filter(Boolean);
+    lines.push(`• ${bits.join(" — ")}`);
+  }
+  lines.push("", "الأوقات بتوقيت الكويت (GMT+3)", `التفاصيل: ${RAWDAH_URL}`);
+  return lines.join("\n");
 }
 
 const chip = (active) =>
@@ -184,9 +219,19 @@ export default function Rawdah({ t }) {
         ) : results.length === 0 ? (
           <p className="text-center text-slate-500 py-16">لا توجد دروس مطابقة.</p>
         ) : (
-          <div className="grid gap-5">
-            {results.map((l) => <Card key={l.id} l={l} showDay={searching} />)}
-          </div>
+          <>
+            {!searching && (
+              <div className="mb-4">
+                <button type="button" onClick={() => shareText(scheduleText(day, results))}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-cream bg-sage-600 hover:bg-sage-700 transition-colors">
+                  <Share2 size={15} /> مشاركة جدول {day}
+                </button>
+              </div>
+            )}
+            <div className="grid gap-5">
+              {results.map((l) => <Card key={l.id} l={l} showDay={searching} />)}
+            </div>
+          </>
         )}
       </div>
     </section>
@@ -198,7 +243,9 @@ function Card({ l, showDay }) {
   const maps = l.location ? `https://maps.google.com/?q=${encodeURIComponent((l.location || "") + " " + (l.area || ""))}` : null;
   const wa = l.phone ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}` : null;
   // A dated, non-recurring lesson whose date has passed is "ended" (greyed out).
-  const ended = !!l.lesson_date && !l.is_recurring && new Date(`${l.lesson_date}T23:59:59`) < new Date();
+  // Ended = a dated, non-recurring lesson whose day has already passed (Kuwait date).
+  const todayKw = new Date(Date.now() + 3 * 3600 * 1000).toISOString().split("T")[0];
+  const ended = !!l.lesson_date && !l.is_recurring && l.lesson_date < todayKw;
   const tint = ended
     ? "bg-pearl-100 dark:bg-white opacity-70"
     : women ? "bg-[#fbf1f3] dark:bg-white" : "bg-[#eef4fa] dark:bg-white";
@@ -262,6 +309,10 @@ function Card({ l, showDay }) {
               <MessageCircle size={15} /> واتساب
             </a>
           )}
+          <button type="button" onClick={() => shareText(lessonText(l))}
+            className={`${btn} border border-sage-300 text-sage-600 bg-white hover:bg-sage-100`}>
+            <Share2 size={15} /> مشاركة
+          </button>
         </div>
       )}
     </article>
