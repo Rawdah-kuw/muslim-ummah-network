@@ -82,10 +82,30 @@ export default function WirdDownload({ item, lang, t }) {
       );
       ctx.fillText("muslimummah.app", S / 2, 1002);
 
-      const a = document.createElement("a");
-      a.href = canvas.toDataURL("image/png");
-      a.download = "muslim-ummah-wird.png";
-      a.click();
+      // Robust download across browsers (blob URL + in-DOM anchor; iOS fallback).
+      const triggerDownload = (url, revoke) => {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "muslim-ummah-wird.png";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        if (revoke) setTimeout(() => URL.revokeObjectURL(url), 5000);
+      };
+      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (canvas.toBlob) {
+        canvas.toBlob((blob) => {
+          if (!blob) { triggerDownload(canvas.toDataURL("image/png"), false); return; }
+          const url = URL.createObjectURL(blob);
+          // iOS ignores the download attribute → open the image so it can be saved by long-press.
+          if (isIOS) { window.open(url, "_blank"); setTimeout(() => URL.revokeObjectURL(url), 10000); }
+          else triggerDownload(url, true);
+        }, "image/png");
+      } else {
+        triggerDownload(canvas.toDataURL("image/png"), false);
+      }
     } finally {
       setBusy(false);
     }
