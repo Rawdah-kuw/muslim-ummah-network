@@ -180,8 +180,9 @@ async function shareLessonImage(l) {
   c.toBlob(async (blob) => {
     if (!blob) return;
     const file = new File([blob], "rawdah-lesson.png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file] }); return; } catch { return; }
+    const payload = { files: [file], text: lessonText(l) };
+    if (navigator.canShare && navigator.canShare(payload)) {
+      try { await navigator.share(payload); return; } catch { return; }
     }
     const url = URL.createObjectURL(blob);
     const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
