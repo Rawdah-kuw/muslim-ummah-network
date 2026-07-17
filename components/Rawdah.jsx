@@ -147,35 +147,47 @@ async function shareLessonImage(l) {
   const accent = women ? "#b58d88" : "#5a7a8a";
   x.fillStyle = women ? "#fbf1f3" : "#eef4fa";
   x.fillRect(0, 0, S, S);
-  x.fillStyle = "#FDFBF7"; roundRectPath(x, 60, 60, S - 120, S - 120, 44); x.fill();
-  x.strokeStyle = "#e7ddd8"; x.lineWidth = 3; roundRectPath(x, 60, 60, S - 120, S - 120, 44); x.stroke();
+  x.fillStyle = "#FDFBF7"; roundRectPath(x, 56, 56, S - 112, S - 112, 46); x.fill();
+  x.strokeStyle = "#e7ddd8"; x.lineWidth = 3; roundRectPath(x, 56, 56, S - 112, S - 112, 46); x.stroke();
   x.direction = "rtl"; x.textAlign = "center";
 
-  x.fillStyle = accent; x.font = "600 34px Tajawal, sans-serif";
-  x.fillText("روضة · مجالس ودروس الذكر", S / 2, 172);
+  x.fillStyle = accent; x.font = "600 32px Tajawal, sans-serif";
+  x.fillText("روضة · مجالس ودروس الذكر", S / 2, 158);
 
-  const pill = women ? "للنساء" : "للجميع";
-  x.font = "700 30px Tajawal, sans-serif";
-  const pw = x.measureText(pill).width + 64;
-  x.fillStyle = accent; roundRectPath(x, S / 2 - pw / 2, 200, pw, 56, 28); x.fill();
-  x.fillStyle = "#ffffff"; x.fillText(pill, S / 2, 238);
+  // Badges row: gender + type(s), centered.
+  const badges = [{ t: women ? "للنساء" : "للجميع", bg: accent, fg: "#ffffff" }];
+  for (const tp of (Array.isArray(l.types) ? l.types : [])) {
+    const online = tp === "اونلاين";
+    badges.push({ t: tp, bg: online ? "#dbe7f0" : "#e2ece7", fg: online ? "#3f5f70" : "#3e5a4e" });
+  }
+  x.font = "700 28px Tajawal, sans-serif";
+  const bw = badges.map((b) => x.measureText(b.t).width + 46);
+  const btotal = bw.reduce((a, b) => a + b, 0) + 16 * (badges.length - 1);
+  let bx = S / 2 - btotal / 2;
+  for (let i = 0; i < badges.length; i++) {
+    x.fillStyle = badges[i].bg; roundRectPath(x, bx, 196, bw[i], 54, 27); x.fill();
+    x.fillStyle = badges[i].fg; x.fillText(badges[i].t, bx + bw[i] / 2, 232);
+    bx += bw[i] + 16;
+  }
 
-  x.fillStyle = "#1B3B2B"; x.font = "700 56px Amiri, serif";
-  let ty = drawWrapped(x, l.title || "", S / 2, 350, S - 280, 74);
-  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 40px Tajawal, sans-serif"; x.fillText(l.teacher, S / 2, ty + 24); ty += 84; }
+  x.fillStyle = "#1B3B2B"; x.font = "700 58px Amiri, serif";
+  let ty = drawWrapped(x, l.title || "", S / 2, 352, S - 260, 76);
+  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 40px Tajawal, sans-serif"; x.fillText(`مع ${l.teacher}`, S / 2, ty + 26); ty += 92; }
 
-  x.strokeStyle = "#e7ddd8"; x.lineWidth = 2; x.beginPath(); x.moveTo(200, ty + 24); x.lineTo(S - 200, ty + 24); x.stroke(); ty += 100;
+  x.strokeStyle = "#e7ddd8"; x.lineWidth = 2; x.beginPath(); x.moveTo(220, ty); x.lineTo(S - 220, ty); x.stroke(); ty += 82;
 
   x.fillStyle = "#334155"; x.font = "500 40px Tajawal, sans-serif";
   const dt = l.day + (l.lesson_date ? ` — ${fmtDate(l.lesson_date)}` : (l.is_recurring ? " (أسبوعي)" : ""));
-  x.fillText(dt, S / 2, ty); ty += 68;
-  if (l.time) { x.fillText(`${l.time} · بتوقيت الكويت`, S / 2, ty); ty += 68; }
+  x.fillText(dt, S / 2, ty); ty += 62;
+  if (l.time) { x.fillText(`${l.time} · بتوقيت الكويت`, S / 2, ty); ty += 62; }
   const loc = [l.area, l.location].filter(Boolean).join(" · ");
-  if (loc) { ty = drawWrapped(x, loc, S / 2, ty, S - 300, 58); }
+  if (loc) { x.font = "500 36px Tajawal, sans-serif"; x.fillStyle = "#475569"; ty = drawWrapped(x, loc, S / 2, ty, S - 300, 52); ty += 8; }
+  const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join("  ·  ");
+  if (contact) { x.fillStyle = "#8792a3"; x.font = "400 32px Tajawal, sans-serif"; x.fillText(contact, S / 2, ty); }
 
-  x.fillStyle = "#1B3B2B"; x.font = "700 42px Tajawal, sans-serif"; x.fillText("شبكة أمة الإسلام", S / 2, S - 158);
-  x.fillStyle = "#94A3B8"; x.font = "400 28px Tajawal, sans-serif"; x.fillText("muslimummah.app", S / 2, S - 112);
-  x.fillText("صدقة جارية عن علي عبد العزيز الصدّيقي رحمه الله", S / 2, S - 72);
+  x.fillStyle = "#1B3B2B"; x.font = "700 42px Tajawal, sans-serif"; x.fillText("شبكة أمة الإسلام", S / 2, S - 152);
+  x.fillStyle = "#94A3B8"; x.font = "400 28px Tajawal, sans-serif"; x.fillText("muslimummah.app", S / 2, S - 108);
+  x.fillText("صدقة جارية عن علي عبد العزيز الصدّيقي رحمه الله", S / 2, S - 68);
 
   c.toBlob(async (blob) => {
     if (!blob) return;
