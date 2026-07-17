@@ -208,35 +208,66 @@ function wrapLines(x, text, maxW) {
 }
 function rowHeight(x, l, S) {
   x.font = "700 40px Amiri, serif";
-  const lines = Math.min(2, wrapLines(x, l.title || "", S - 260).length || 1);
-  let h = 50 + lines * 52;
-  if (l.teacher || l.time) h += 44;
-  if (l.area || l.location) h += 40;
-  return h + 54;
+  const cardW = S - 140;
+  const titleLines = Math.min(2, wrapLines(x, l.title || "", cardW - 90).length || 1);
+  let h = 80 + titleLines * 50;
+  if (l.teacher) h += 44;
+  if ([l.time, l.area, l.location].filter(Boolean).length) h += 40;
+  if (l.instagram || l.phone) h += 36;
+  return h + 24 + 20;
 }
 function drawScheduleRow(x, l, top, S) {
   const women = genderOf(l) === "نساء";
   const accent = women ? "#b58d88" : "#5a7a8a";
-  const xR = S - 110;
-  x.fillStyle = accent; x.beginPath(); x.arc(S - 70, top + 26, 12, 0, Math.PI * 2); x.fill();
-  x.textAlign = "right"; x.direction = "rtl";
+  const tint = women ? "#fbf1f3" : "#eef4fa";
+  const cardX = 70, cardW = S - 140;
+  const slot = rowHeight(x, l, S) - 20;
+  x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 28); x.fill();
+  x.fillStyle = accent; roundRectPath(x, cardX + cardW - 14, top + 20, 8, slot - 40, 4); x.fill();
+  const xR = cardX + cardW - 42, xL = cardX + 42;
+  x.direction = "rtl";
+  // type badges (top-left)
+  let px = xL;
+  for (const tp of (Array.isArray(l.types) ? l.types : [])) {
+    const online = tp === "اونلاين";
+    x.font = "700 26px Tajawal, sans-serif";
+    const w = x.measureText(tp).width + 40;
+    x.fillStyle = online ? "#dbe7f0" : "#e2ece7"; roundRectPath(x, px, top + 24, w, 44, 22); x.fill();
+    x.fillStyle = online ? "#3f5f70" : "#3e5a4e"; x.textAlign = "center"; x.fillText(tp, px + w / 2, top + 54);
+    px += w + 14;
+  }
+  // title + teacher + info (right-aligned)
+  x.textAlign = "right";
   x.fillStyle = "#1B3B2B"; x.font = "700 40px Amiri, serif";
-  const lines = wrapLines(x, l.title || "", S - 260).slice(0, 2);
-  let ty = top + 46;
-  for (const ln of lines) { x.fillText(ln, xR, ty); ty += 52; }
-  ty += 4;
-  const meta = [l.teacher, l.time].filter(Boolean).join(" · ");
-  if (meta) { x.fillStyle = "#4F7263"; x.font = "600 32px Tajawal, sans-serif"; x.fillText(meta, xR, ty); ty += 44; }
-  const loc = [l.area, l.location].filter(Boolean).join(" · ");
-  if (loc) { x.fillStyle = "#64748b"; x.font = "400 28px Tajawal, sans-serif"; x.fillText(loc, xR, ty); ty += 40; }
-  x.strokeStyle = "#ece4df"; x.lineWidth = 2; x.beginPath(); x.moveTo(80, ty + 12); x.lineTo(S - 80, ty + 12); x.stroke();
+  const lines = wrapLines(x, l.title || "", cardW - 90).slice(0, 2);
+  let y = top + 80;
+  for (const ln of lines) { x.fillText(ln, xR, y + 38); y += 50; }
+  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 32px Tajawal, sans-serif"; x.fillText(`مع ${l.teacher}`, xR, y + 34); y += 44; }
+  const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
+  if (info) { x.fillStyle = "#475569"; x.font = "400 30px Tajawal, sans-serif"; x.fillText(info, xR, y + 30); y += 40; }
+  const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join("  ·  ");
+  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 27px Tajawal, sans-serif"; x.fillText(contact, xR, y + 26); }
 }
-function drawScheduleHeader(x, day, S) {
+function scheduleDate(day, list) {
+  const dated = (list || []).find((l) => l.lesson_date && l.day === day && !l.is_recurring);
+  if (dated) { try { return new Date(`${dated.lesson_date}T00:00:00`); } catch { /* ignore */ } }
+  const idx = DAYS.indexOf(day); const now = new Date();
+  if (idx < 0) return now;
+  const d = new Date(now); d.setDate(now.getDate() + ((idx - now.getDay() + 7) % 7)); return d;
+}
+function drawScheduleHeader(x, day, dateObj, S) {
   x.fillStyle = "#FDFBF7"; x.fillRect(0, 0, S, 1920);
-  x.fillStyle = "#1B3B2B"; x.fillRect(0, 0, S, 200);
+  x.fillStyle = "#1B3B2B"; x.fillRect(0, 0, S, 214);
   x.textAlign = "center"; x.direction = "rtl";
-  x.fillStyle = "#FDFBF7"; x.font = "700 56px Tajawal, sans-serif"; x.fillText(`دروس ${day}`, S / 2, 108);
-  x.fillStyle = "#a8c3b4"; x.font = "500 30px Tajawal, sans-serif"; x.fillText("روضة · مجالس ودروس الذكر", S / 2, 158);
+  x.fillStyle = "#a8c3b4"; x.font = "500 30px Tajawal, sans-serif"; x.fillText("روضة · مجالس ودروس الذكر", S / 2, 62);
+  x.fillStyle = "#FDFBF7"; x.font = "700 54px Tajawal, sans-serif"; x.fillText(day, S / 2, 128);
+  let sub = "";
+  try {
+    const g = new Intl.DateTimeFormat("ar", { day: "numeric", month: "long" }).format(dateObj);
+    const h = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long" }).format(dateObj);
+    sub = `${g} · ${h}`;
+  } catch { /* ignore */ }
+  if (sub) { x.fillStyle = "#c9dcd0"; x.font = "500 32px Tajawal, sans-serif"; x.fillText(sub, S / 2, 178); }
 }
 function drawScheduleFooter(x, S, page, total) {
   const H = 1920;
@@ -247,7 +278,8 @@ function drawScheduleFooter(x, S, page, total) {
 }
 async function shareScheduleImage(day, list) {
   try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch { /* ignore */ }
-  const S = 1080, H = 1920, START = 250, MAXY = H - 180;
+  const S = 1080, H = 1920, START = 252, MAXY = H - 180;
+  const dateObj = scheduleDate(day, list);
   const m = document.createElement("canvas").getContext("2d");
   const pages = []; let cur = []; let y = START;
   for (const l of list) {
@@ -261,7 +293,7 @@ async function shareScheduleImage(day, list) {
   for (let p = 0; p < pages.length; p++) {
     const c = document.createElement("canvas"); c.width = S; c.height = H;
     const x = c.getContext("2d");
-    drawScheduleHeader(x, day, S);
+    drawScheduleHeader(x, day, dateObj, S);
     let yy = START;
     for (const l of pages[p]) { drawScheduleRow(x, l, yy, S); yy += rowHeight(x, l, S); }
     drawScheduleFooter(x, S, p + 1, pages.length);
