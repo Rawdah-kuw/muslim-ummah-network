@@ -119,7 +119,7 @@ const chip = (active) =>
     active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
   }`;
 
-export default function Rawdah({ t }) {
+export default function Rawdah({ lang = "ar" }) {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
@@ -249,7 +249,7 @@ export default function Rawdah({ t }) {
               </div>
             )}
             <div className="grid gap-5">
-              {results.map((l) => <Card key={l.id} l={l} showDay={searching} />)}
+              {results.map((l) => <Card key={l.id} l={l} showDay={searching} lang={lang} />)}
             </div>
           </>
         )}
@@ -258,7 +258,8 @@ export default function Rawdah({ t }) {
   );
 }
 
-function Card({ l, showDay }) {
+function Card({ l, showDay, lang = "ar" }) {
+  const en = lang === "en";
   const women = genderOf(l) === "نساء";
   const maps = l.location ? `https://maps.google.com/?q=${encodeURIComponent((l.location || "") + " " + (l.area || ""))}` : null;
   const wa = l.phone ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}` : null;
@@ -344,25 +345,36 @@ function Card({ l, showDay }) {
       )}
 
       {showWarn && (
-        <div className="fixed inset-0 z-50 bg-pine-900/70 flex items-center justify-center p-4" onClick={() => setShowWarn(false)}>
+        <div className="fixed inset-0 z-50 bg-pine-900/70 flex items-center justify-center p-4" onClick={() => setShowWarn(false)} dir={en ? "ltr" : "rtl"}>
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-pine-lg" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-lg font-bold text-[#b58d88] mb-1">🌸 درس للنساء فقط</h4>
-            <p className="text-sm text-slate-500 mb-3">قبل الدخول، الرجاء الالتزام بالشروط التالية:</p>
-            <ul className="text-sm text-ink space-y-2 leading-relaxed list-disc pr-5">
-              <li>لا يحلّ للرجال الدخول.</li>
-              <li>الدخول بالاسم الصريح؛ للتحقّق من الحضور.</li>
-              <li>لا يُسمح بتسجيل الدرس أو إخراج الصوتيات.</li>
-              <li>عدم إدراج أي روابط في الدردشة.</li>
+            <h4 className="text-lg font-bold text-[#b58d88] mb-1">🌸 {en ? "Women-only lesson" : "درس للنساء فقط"}</h4>
+            <p className="text-sm text-slate-500 mb-3">{en ? "Before joining, please observe the following:" : "قبل الدخول، الرجاء الالتزام بالشروط التالية:"}</p>
+            <ul className={`text-sm text-ink space-y-2 leading-relaxed list-disc ${en ? "pl-5" : "pr-5"}`}>
+              {en ? (
+                <>
+                  <li>Men are not permitted to enter.</li>
+                  <li>Join with your real (clear) name for attendance verification.</li>
+                  <li>Recording the lesson or extracting the audio is not allowed.</li>
+                  <li>Do not post any links in the chat.</li>
+                </>
+              ) : (
+                <>
+                  <li>لا يحلّ للرجال الدخول.</li>
+                  <li>الدخول بالاسم الصريح؛ للتحقّق من الحضور.</li>
+                  <li>لا يُسمح بتسجيل الدرس أو إخراج الصوتيات.</li>
+                  <li>عدم إدراج أي روابط في الدردشة.</li>
+                </>
+              )}
             </ul>
-            <p className="text-xs text-slate-400 mt-3 font-quran">«المؤمنون على شروطهم»</p>
+            <p className="text-xs text-slate-400 mt-3 font-quran">{en ? "“Believers are bound by their conditions.”" : "«المؤمنون على شروطهم»"}</p>
             <div className="flex gap-2 mt-5">
               <a href={l.zoom_link} target="_blank" rel="noopener noreferrer" onClick={() => setShowWarn(false)}
                 className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`}>
-                <Video size={15} /> أوافق وأدخل
+                <Video size={15} /> {en ? "I agree — enter" : "أوافق وأدخل"}
               </a>
               <button type="button" onClick={() => setShowWarn(false)}
                 className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`}>
-                إلغاء
+                {en ? "Cancel" : "إلغاء"}
               </button>
             </div>
           </div>

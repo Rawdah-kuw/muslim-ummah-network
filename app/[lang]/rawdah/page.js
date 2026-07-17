@@ -24,7 +24,7 @@ export default function RawdahPage({ params }) {
   return (
     <>
       <Header t={t} lang={lang} />
-      <Rawdah />
+      <Rawdah lang={lang} />
       <Footer t={t} lang={lang} />
     </>
   );
