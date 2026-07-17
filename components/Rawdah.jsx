@@ -62,6 +62,25 @@ function parseTime(t) {
 
 const RAWDAH_URL = "https://muslimummah.app/ar/rawdah";
 
+// Normalize Arabic text so near-duplicates collapse (spaces, honorifics, digits, punctuation).
+const HONORIFICS = ["د", "ا", "الدكتور", "الدكتوره", "دكتور", "دكتوره", "الشيخ", "الشيخه",
+  "شيخ", "شيخه", "الاستاذ", "الاستاذه", "استاذ", "استاذه", "الاخت", "الواعظه", "الداعيه",
+  "المعلمه", "الباحثه"];
+function normalizeText(s) {
+  if (!s) return "";
+  const t = String(s)
+    .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString())
+    .replace(/[ً-ْ]/g, "")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/[.،,؛:!؟"'()\-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  return t.split(" ").filter((w) => w && !HONORIFICS.includes(w)).join(" ");
+}
+
 // Native share sheet (iPhone/Android) with WhatsApp fallback.
 async function shareText(text) {
   if (typeof navigator !== "undefined" && navigator.share) {
@@ -121,7 +140,8 @@ export default function Rawdah({ t }) {
           if (l.is_paused) return false; // hide temporarily-paused recurring lessons
           // Hide dated lessons more than a week away — they appear a week before.
           if (!l.is_recurring && l.lesson_date && new Date(`${l.lesson_date}T00:00:00`) > horizon) return false;
-          const key = `${l.title}|${l.teacher}|${l.day}|${l.time}`;
+          // Normalized key (title+teacher+day) collapses spelling/format variants.
+          const key = `${normalizeText(l.title)}|${normalizeText(l.teacher)}|${l.day}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;

@@ -37,12 +37,16 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 
 إن لم يكن بوستر درس ديني → أرجعي {"error":"ليس بوستر درس"}.`;
 
+const HONORIFICS = ["د", "ا", "الدكتور", "الدكتوره", "دكتور", "دكتوره", "الشيخ", "الشيخه",
+  "شيخ", "شيخه", "الاستاذ", "الاستاذه", "استاذ", "استاذه", "الاخت", "الواعظه", "الداعيه",
+  "المعلمه", "الباحثه"];
 function normalizeText(s) {
   if (!s) return "";
-  return String(s)
+  const t = String(s)
     .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString())
     .replace(/[ً-ْ]/g, "").replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
-    .replace(/\s+/g, " ").replace(/[.،,؛:!؟"'()\-_]/g, "").trim().toLowerCase();
+    .replace(/[.،,؛:!؟"'()\-_]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  return t.split(" ").filter((w) => w && !HONORIFICS.includes(w)).join(" ");
 }
 function nextDateForDay(day) {
   const idx = DAYS_AR.indexOf(day);

@@ -25,19 +25,23 @@ function pick(obj) {
   return out;
 }
 
-// Normalize Arabic text so duplicates are caught despite spelling variations.
+// Normalize Arabic text so duplicates are caught despite spelling/honorific variations.
+const HONORIFICS = ["د", "ا", "الدكتور", "الدكتوره", "دكتور", "دكتوره", "الشيخ", "الشيخه",
+  "شيخ", "شيخه", "الاستاذ", "الاستاذه", "استاذ", "استاذه", "الاخت", "الواعظه", "الداعيه",
+  "المعلمه", "الباحثه"];
 function normalizeText(s) {
   if (!s) return "";
-  return String(s)
+  const t = String(s)
     .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString())
     .replace(/[ً-ْ]/g, "")
     .replace(/[إأآا]/g, "ا")
     .replace(/ة/g, "ه")
     .replace(/ى/g, "ي")
+    .replace(/[.،,؛:!؟"'()\-_]/g, " ")
     .replace(/\s+/g, " ")
-    .replace(/[.،,؛:!؟"'()\-_]/g, "")
     .trim()
     .toLowerCase();
+  return t.split(" ").filter((w) => w && !HONORIFICS.includes(w)).join(" ");
 }
 
 // Nearest upcoming date matching a weekday name (Kuwait time, UTC+3).
@@ -81,6 +85,30 @@ async function cleanupOld(client) {
   return ids.length;
 }
 
+// Permanently remove duplicate rows (same normalized title+teacher+day), keeping the fullest.
+const RICH_FIELDS = ["time", "area", "location", "instagram", "phone", "channel_link", "zoom_link", "lesson_date"];
+const fieldCount = (l) => RICH_FIELDS.reduce((n, k) => n + (l[k] ? 1 : 0), 0);
+async function dedupDb(client) {
+  const { data: rows } = await client.from("lessons").select("*");
+  const groups = {};
+  for (const l of rows || []) {
+    const key = `${normalizeText(l.title)}|${normalizeText(l.teacher)}|${l.day}`;
+    (groups[key] = groups[key] || []).push(l);
+  }
+  const toDelete = [];
+  for (const g of Object.values(groups)) {
+    if (g.length < 2) continue;
+    g.sort((a, b) => {
+      if (!!b.is_published !== !!a.is_published) return b.is_published ? 1 : -1;
+      if (fieldCount(b) !== fieldCount(a)) return fieldCount(b) - fieldCount(a);
+      return (a.id || 0) - (b.id || 0);
+    });
+    for (const extra of g.slice(1)) toDelete.push(extra.id);
+  }
+  if (toDelete.length) await client.from("lessons").delete().in("id", toDelete);
+  return toDelete.length;
+}
+
 // Fix existing rows whose stored date doesn't match their weekday.
 async function healDates(client) {
   const { data: rows } = await client.from("lessons").select("id, day, lesson_date, is_recurring");
@@ -94,7 +122,7 @@ export async function GET(req) {
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
   const client = db();
   let cleaned = 0;
-  try { cleaned = await cleanupOld(client); await healDates(client); } catch { /* ignore */ }
+  try { cleaned = await cleanupOld(client); await healDates(client); await dedupDb(client); } catch { /* ignore */ }
   const { data, error } = await client.from("lessons").select("*").order("created_at", { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ lessons: data, cleaned });
