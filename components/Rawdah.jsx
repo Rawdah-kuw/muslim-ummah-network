@@ -114,6 +114,86 @@ function scheduleText(day, list) {
   return lines.join("\n");
 }
 
+function roundRectPath(x, X, Y, W, H, r) {
+  x.beginPath();
+  x.moveTo(X + r, Y);
+  x.arcTo(X + W, Y, X + W, Y + H, r);
+  x.arcTo(X + W, Y + H, X, Y + H, r);
+  x.arcTo(X, Y + H, X, Y, r);
+  x.arcTo(X, Y, X + W, Y, r);
+  x.closePath();
+}
+// Draw centered, word-wrapped text; returns the y after the last line.
+function drawWrapped(x, text, cx, y, maxW, lineH) {
+  const words = String(text).split(" ");
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    const t = line ? `${line} ${w}` : w;
+    if (x.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  }
+  if (line) lines.push(line);
+  for (const ln of lines) { x.fillText(ln, cx, y); y += lineH; }
+  return y;
+}
+// Render a lesson as a 1080×1080 shareable card (like the daily-wird image), then share/download it.
+async function shareLessonImage(l) {
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch { /* ignore */ }
+  const S = 1080;
+  const c = document.createElement("canvas");
+  c.width = S; c.height = S;
+  const x = c.getContext("2d");
+  const women = genderOf(l) === "نساء";
+  const accent = women ? "#b58d88" : "#5a7a8a";
+  x.fillStyle = women ? "#fbf1f3" : "#eef4fa";
+  x.fillRect(0, 0, S, S);
+  x.fillStyle = "#FDFBF7"; roundRectPath(x, 60, 60, S - 120, S - 120, 44); x.fill();
+  x.strokeStyle = "#e7ddd8"; x.lineWidth = 3; roundRectPath(x, 60, 60, S - 120, S - 120, 44); x.stroke();
+  x.direction = "rtl"; x.textAlign = "center";
+
+  x.fillStyle = accent; x.font = "600 34px Tajawal, sans-serif";
+  x.fillText("روضة · مجالس ودروس الذكر", S / 2, 172);
+
+  const pill = women ? "للنساء" : "للجميع";
+  x.font = "700 30px Tajawal, sans-serif";
+  const pw = x.measureText(pill).width + 64;
+  x.fillStyle = accent; roundRectPath(x, S / 2 - pw / 2, 200, pw, 56, 28); x.fill();
+  x.fillStyle = "#ffffff"; x.fillText(pill, S / 2, 238);
+
+  x.fillStyle = "#1B3B2B"; x.font = "700 56px Amiri, serif";
+  let ty = drawWrapped(x, l.title || "", S / 2, 350, S - 280, 74);
+  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 40px Tajawal, sans-serif"; x.fillText(l.teacher, S / 2, ty + 24); ty += 84; }
+
+  x.strokeStyle = "#e7ddd8"; x.lineWidth = 2; x.beginPath(); x.moveTo(200, ty + 24); x.lineTo(S - 200, ty + 24); x.stroke(); ty += 100;
+
+  x.fillStyle = "#334155"; x.font = "500 40px Tajawal, sans-serif";
+  const dt = l.day + (l.lesson_date ? ` — ${fmtDate(l.lesson_date)}` : (l.is_recurring ? " (أسبوعي)" : ""));
+  x.fillText(dt, S / 2, ty); ty += 68;
+  if (l.time) { x.fillText(`${l.time} · بتوقيت الكويت`, S / 2, ty); ty += 68; }
+  const loc = [l.area, l.location].filter(Boolean).join(" · ");
+  if (loc) { ty = drawWrapped(x, loc, S / 2, ty, S - 300, 58); }
+
+  x.fillStyle = "#1B3B2B"; x.font = "700 42px Tajawal, sans-serif"; x.fillText("شبكة أمة الإسلام", S / 2, S - 158);
+  x.fillStyle = "#94A3B8"; x.font = "400 28px Tajawal, sans-serif"; x.fillText("muslimummah.app", S / 2, S - 112);
+  x.fillText("صدقة جارية عن علي عبد العزيز الصدّيقي رحمه الله", S / 2, S - 72);
+
+  c.toBlob(async (blob) => {
+    if (!blob) return;
+    const file = new File([blob], "rawdah-lesson.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return; } catch { return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (isIOS) { window.open(url, "_blank"); }
+    else {
+      const a = document.createElement("a"); a.href = url; a.download = "rawdah-lesson.png";
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+  }, "image/png");
+}
+
 const chip = (active) =>
   `px-4 py-2 rounded-full text-sm font-medium transition-all border ${
     active ? "bg-pinebtn text-cream border-pine-800" : "bg-white text-slate-500 border-pearl-300 hover:border-sage-300"
@@ -337,9 +417,9 @@ function Card({ l, showDay, lang = "ar" }) {
               <MessageCircle size={15} /> واتساب
             </a>
           )}
-          <button type="button" onClick={() => shareText(lessonText(l))}
+          <button type="button" onClick={() => shareLessonImage(l)}
             className={`${btn} border border-sage-300 text-sage-600 bg-white hover:bg-sage-100`}>
-            <Share2 size={15} /> مشاركة
+            <Share2 size={15} /> مشاركة كصورة
           </button>
         </div>
       )}
