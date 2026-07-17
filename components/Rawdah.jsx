@@ -270,6 +270,7 @@ function Card({ l, showDay }) {
     ? "bg-pearl-100 dark:bg-white opacity-70"
     : women ? "bg-[#fbf1f3] dark:bg-white" : "bg-[#eef4fa] dark:bg-white";
   const btn = "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors";
+  const [showWarn, setShowWarn] = useState(false);
   return (
     <article className={`rounded-2xl p-5 border border-pearl-200 hover:shadow-pine transition-shadow ${tint}`}>
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
@@ -305,14 +306,20 @@ function Card({ l, showDay }) {
               <MapPin size={15} /> الموقع
             </a>
           )}
-          {/* Join — dedicated link if present, otherwise the main WhatsApp group ("where's the lesson?"). */}
-          {women && l.channel_link ? (
+          {/* Zoom is the primary way to join for everyone. Women see a conditions warning first. */}
+          {l.zoom_link ? (
+            women ? (
+              <button type="button" onClick={() => setShowWarn(true)} className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`}>
+                <Video size={15} /> انضمي عبر زوم
+              </button>
+            ) : (
+              <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
+                <Video size={15} /> انضم عبر زوم
+              </a>
+            )
+          ) : women && l.channel_link ? (
             <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link} target="_blank" rel="noopener noreferrer">
               <MessageCircle size={15} /> انضمي للقناة
-            </a>
-          ) : !women && l.zoom_link ? (
-            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={l.zoom_link} target="_blank" rel="noopener noreferrer">
-              <Video size={15} /> انضم عبر زوم
             </a>
           ) : (
             <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={GROUP_LINK} target="_blank" rel="noopener noreferrer">
@@ -333,6 +340,32 @@ function Card({ l, showDay }) {
             className={`${btn} border border-sage-300 text-sage-600 bg-white hover:bg-sage-100`}>
             <Share2 size={15} /> مشاركة
           </button>
+        </div>
+      )}
+
+      {showWarn && (
+        <div className="fixed inset-0 z-50 bg-pine-900/70 flex items-center justify-center p-4" onClick={() => setShowWarn(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-pine-lg" onClick={(e) => e.stopPropagation()}>
+            <h4 className="text-lg font-bold text-[#b58d88] mb-1">🌸 درس للنساء فقط</h4>
+            <p className="text-sm text-slate-500 mb-3">قبل الدخول، الرجاء الالتزام بالشروط التالية:</p>
+            <ul className="text-sm text-ink space-y-2 leading-relaxed list-disc pr-5">
+              <li>لا يحلّ للرجال الدخول.</li>
+              <li>الدخول بالاسم الصريح؛ للتحقّق من الحضور.</li>
+              <li>لا يُسمح بتسجيل الدرس أو إخراج الصوتيات.</li>
+              <li>عدم إدراج أي روابط في الدردشة.</li>
+            </ul>
+            <p className="text-xs text-slate-400 mt-3 font-quran">«المؤمنون على شروطهم»</p>
+            <div className="flex gap-2 mt-5">
+              <a href={l.zoom_link} target="_blank" rel="noopener noreferrer" onClick={() => setShowWarn(false)}
+                className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`}>
+                <Video size={15} /> أوافق وأدخل
+              </a>
+              <button type="button" onClick={() => setShowWarn(false)}
+                className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`}>
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </article>
