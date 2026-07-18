@@ -55,6 +55,31 @@ function nextDateForDay(day) {
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
 }
 
+// A poster with several weekdays + a date range («الأيام: الأحد…الخميس» و«من 5 يوليو إلى 5 أغسطس»)
+// becomes one dated lesson per occurrence, so each day's schedule shows it correctly.
+function expandRange(row) {
+  const from = row.date_from, to = row.date_to;
+  const days = Array.isArray(row.days) && row.days.length
+    ? row.days.filter((d) => DAYS_AR.includes(d))
+    : (row.day ? [row.day] : []);
+  if (!from || !to || !days.length) return [row];
+  const start = new Date(`${from}T00:00:00Z`);
+  const end = new Date(`${to}T00:00:00Z`);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return [row];
+  const out = [];
+  const d = new Date(start);
+  let guard = 0;
+  while (d <= end && out.length < 60 && guard++ < 400) {
+    const wd = DAYS_AR[d.getUTCDay()];
+    if (days.includes(wd)) {
+      const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      out.push({ ...row, day: wd, lesson_date: iso, is_recurring: false });
+    }
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out.length ? out : [row];
+}
+
 // Infer gender from honorifics / kunya / name patterns (used when `gender` is empty).
 function inferGender(teacher, title) {
   const s = `${teacher || ""} ${title || ""}`
@@ -160,7 +185,8 @@ export async function POST(req) {
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
   const client = db();
   const body = await req.json().catch(() => ({}));
-  const incoming = (Array.isArray(body.lessons) ? body.lessons : [body]).map(pick).filter((r) => r.title && r.day);
+  const raw = Array.isArray(body.lessons) ? body.lessons : [body];
+  const incoming = raw.flatMap(expandRange).map(pick).filter((r) => r.title && r.day);
   if (!incoming.length) return Response.json({ error: "no-valid-rows" }, { status: 400 });
 
   const insertedRows = [];

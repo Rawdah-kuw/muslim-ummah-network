@@ -31,9 +31,12 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 ▪ zoom_passcode: رمز الزوم أو "".
 ▪ lesson_date: تاريخ YYYY-MM-DD إن وُجد أو "".
 ▪ is_recurring: true إن كان أسبوعياً متكرراً وإلا false.
+▪ days: مصفوفة الأيام إن ذكر البوستر عدة أيام لنفس الدرس («الأيام: الأحد • الإثنين • الأربعاء • الخميس») وإلا [].
+▪ date_from / date_to: إن ذُكر نطاق («ابتداءً من 5 يوليو ولغاية 5 أغسطس 2026») بصيغة YYYY-MM-DD وإلا "".
+مهم: البوستر بعدة أيام ونطاق تواريخ = **درس واحد** مع days وdate_from وdate_to (لا تكرّريه).
 
 أرجعي JSON فقط بلا شرح:
-{"lessons":[{"title":"","teacher":"","gender":"","day":"","time":"","area":"","location":"","types":[""],"instagram":"","phone":"","channel_link":"","zoom_link":"","zoom_passcode":"","lesson_date":"","is_recurring":false}]}
+{"lessons":[{"title":"","teacher":"","gender":"","day":"","days":[],"time":"","area":"","location":"","types":[""],"instagram":"","phone":"","channel_link":"","zoom_link":"","zoom_passcode":"","lesson_date":"","date_from":"","date_to":"","is_recurring":false}]}
 
 إن لم يكن بوستر درس ديني → أرجعي {"error":"ليس بوستر درس"}.`;
 
@@ -59,6 +62,28 @@ function nextDateForDay(day) {
 function weekdayOf(d) {
   if (!d) return null;
   return DAYS_AR[new Date(d + "T00:00:00Z").getUTCDay()];
+}
+function expandRange(row) {
+  const from = row.date_from, to = row.date_to;
+  const days = Array.isArray(row.days) && row.days.length
+    ? row.days.filter((d) => DAYS_AR.includes(d))
+    : (row.day ? [row.day] : []);
+  if (!from || !to || !days.length) return [row];
+  const start = new Date(`${from}T00:00:00Z`);
+  const end = new Date(`${to}T00:00:00Z`);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return [row];
+  const out = [];
+  const d = new Date(start);
+  let guard = 0;
+  while (d <= end && out.length < 60 && guard++ < 400) {
+    const wd = DAYS_AR[d.getUTCDay()];
+    if (days.includes(wd)) {
+      const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      out.push({ ...row, day: wd, lesson_date: iso, is_recurring: false });
+    }
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out.length ? out : [row];
 }
 function inferGender(teacher, title) {
   const s = `${teacher || ""} ${title || ""}`
@@ -118,7 +143,7 @@ async function insertLessons(client, lessons) {
     "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "lesson_date",
     "is_recurring", "is_paused", "is_published"];
   let inserted = 0, skipped = 0;
-  for (const raw of lessons) {
+  for (const raw of lessons.flatMap(expandRange)) {
     const row = {};
     for (const k of COLS) if (raw[k] !== undefined) row[k] = raw[k];
     if (!row.title || !row.day) continue;
