@@ -13,14 +13,28 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 // Gender: explicit field wins; otherwise infer from the teacher's honorific.
 // (Existing Rawdah data is women's lessons, so default to "نساء".)
-const FEMALE_RE = /الشيخة|الدكتورة|الأستاذة|الواعظة|الباحثة|المعلمة|الداعية/;
-const MALE_RE = /الشيخ\s|الأستاذ\s|الدكتور\s|الداعي\s/;
+// Infer gender from honorifics / kunya / name patterns — used ONLY when the stored
+// `gender` field is empty. Handles abbreviations (د. / أ.) and «عبد الـ…» names.
+function inferGender(teacher, title) {
+  const s = `${teacher || ""} ${title || ""}`
+    .replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+    .replace(/\s+/g, " ");
+  // — female signals (checked first) —
+  if (/(الشيخه|الدكتوره|الاستاذه|الواعظه|الباحثه|المعلمه|الداعيه|الاخت|المربيه|المدربه)/.test(s)) return "نساء";
+  if (/(^|\s)ام\s/.test(s)) return "نساء";
+  if (/للنساء|النساء فقط|نسائي/.test(s)) return "نساء";
+  if (/(مريم|فاطمه|نوره|حصه|ساره|ابتسام|جميله|منيره|هيا|دلال|شيخه|موضي|بشاير|غريبه|امل|هدي|عائشه|خديجه|زينب|رقيه|اسماء|لطيفه|منال|صفاء|انفال|شيماء|وضحه|حنان|شهد|نجلاء|عبير)/.test(s)) return "نساء";
+  // — male signals —
+  if (/(الشيخ|الدكتور|الاستاذ|الداعي)(?!ه)/.test(s)) return "رجال";
+  if (/(^|\s)(ابو|بن|ابن)\s/.test(s)) return "رجال";
+  if (/(^|\s)عبد\s?ال/.test(s)) return "رجال";
+  if (/(محمد|احمد|علي|عمر|خالد|يوسف|ابراهيم|صالح|سعد|فهد|ناصر|سلطان|بدر|طارق|زياد|حسن|حسين|عثمان|مشاري|عادل|وليد|ماجد|فيصل|عبدالله|سلمان)/.test(s)) return "رجال";
+  return null; // unknown
+}
 function genderOf(l) {
   if (l.gender === "رجال") return "رجال";
   if (l.gender === "نساء") return "نساء";
-  const teach = l.teacher || "";
-  if (MALE_RE.test(teach) && !FEMALE_RE.test(teach)) return "رجال";
-  return "نساء";
+  return inferGender(l.teacher, l.title) || "نساء"; // conservative default
 }
 const todayName = () => DAYS[new Date().getDay()];
 

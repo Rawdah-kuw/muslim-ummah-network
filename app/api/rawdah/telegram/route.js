@@ -60,6 +60,19 @@ function weekdayOf(d) {
   if (!d) return null;
   return DAYS_AR[new Date(d + "T00:00:00Z").getUTCDay()];
 }
+function inferGender(teacher, title) {
+  const s = `${teacher || ""} ${title || ""}`
+    .replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ");
+  if (/(الشيخه|الدكتوره|الاستاذه|الواعظه|الباحثه|المعلمه|الداعيه|الاخت|المربيه|المدربه)/.test(s)) return "نساء";
+  if (/(^|\s)ام\s/.test(s)) return "نساء";
+  if (/للنساء|النساء فقط|نسائي/.test(s)) return "نساء";
+  if (/(مريم|فاطمه|نوره|حصه|ساره|ابتسام|جميله|منيره|هيا|دلال|شيخه|موضي|بشاير|غريبه|امل|هدي|عائشه|خديجه|زينب|رقيه|اسماء|لطيفه|منال|صفاء|انفال|شيماء|وضحه|حنان|شهد|نجلاء|عبير)/.test(s)) return "نساء";
+  if (/(الشيخ|الدكتور|الاستاذ|الداعي)(?!ه)/.test(s)) return "رجال";
+  if (/(^|\s)(ابو|بن|ابن)\s/.test(s)) return "رجال";
+  if (/(^|\s)عبد\s?ال/.test(s)) return "رجال";
+  if (/(محمد|احمد|علي|عمر|خالد|يوسف|ابراهيم|صالح|سعد|فهد|ناصر|سلطان|بدر|طارق|زياد|حسن|حسين|عثمان|مشاري|عادل|وليد|ماجد|فيصل|عبدالله|سلمان)/.test(s)) return "رجال";
+  return null;
+}
 function ensureDate(row) {
   if (row.is_recurring) { row.lesson_date = null; return; }
   if (!row.day) return;
@@ -109,6 +122,7 @@ async function insertLessons(client, lessons) {
     const row = {};
     for (const k of COLS) if (raw[k] !== undefined) row[k] = raw[k];
     if (!row.title || !row.day) continue;
+    if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
     row.is_published = !!(row.title && row.teacher && row.time); // auto-publish complete
     ensureDate(row);
     const { data: existing } = await client.from("lessons")

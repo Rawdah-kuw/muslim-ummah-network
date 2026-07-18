@@ -55,6 +55,33 @@ function nextDateForDay(day) {
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
 }
 
+// Infer gender from honorifics / kunya / name patterns (used when `gender` is empty).
+function inferGender(teacher, title) {
+  const s = `${teacher || ""} ${title || ""}`
+    .replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+    .replace(/\s+/g, " ");
+  if (/(الشيخه|الدكتوره|الاستاذه|الواعظه|الباحثه|المعلمه|الداعيه|الاخت|المربيه|المدربه)/.test(s)) return "نساء";
+  if (/(^|\s)ام\s/.test(s)) return "نساء";
+  if (/للنساء|النساء فقط|نسائي/.test(s)) return "نساء";
+  if (/(مريم|فاطمه|نوره|حصه|ساره|ابتسام|جميله|منيره|هيا|دلال|شيخه|موضي|بشاير|غريبه|امل|هدي|عائشه|خديجه|زينب|رقيه|اسماء|لطيفه|منال|صفاء|انفال|شيماء|وضحه|حنان|شهد|نجلاء|عبير)/.test(s)) return "نساء";
+  if (/(الشيخ|الدكتور|الاستاذ|الداعي)(?!ه)/.test(s)) return "رجال";
+  if (/(^|\s)(ابو|بن|ابن)\s/.test(s)) return "رجال";
+  if (/(^|\s)عبد\s?ال/.test(s)) return "رجال";
+  if (/(محمد|احمد|علي|عمر|خالد|يوسف|ابراهيم|صالح|سعد|فهد|ناصر|سلطان|بدر|طارق|زياد|حسن|حسين|عثمان|مشاري|عادل|وليد|ماجد|فيصل|عبدالله|سلمان)/.test(s)) return "رجال";
+  return null;
+}
+
+// Store an explicit gender for rows that have none, so it's visible/fixable in the admin.
+async function fillGender(client) {
+  const { data: rows } = await client.from("lessons").select("id, gender, teacher, title");
+  const todo = (rows || []).filter((l) => !l.gender);
+  for (const l of todo) {
+    const g = inferGender(l.teacher, l.title) || "نساء";
+    await client.from("lessons").update({ gender: g }).eq("id", l.id);
+  }
+  return todo.length;
+}
+
 // Arabic weekday name for a YYYY-MM-DD string.
 function weekdayOf(dateStr) {
   if (!dateStr) return null;
@@ -122,7 +149,7 @@ export async function GET(req) {
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
   const client = db();
   let cleaned = 0;
-  try { cleaned = await cleanupOld(client); await healDates(client); await dedupDb(client); } catch { /* ignore */ }
+  try { cleaned = await cleanupOld(client); await healDates(client); await dedupDb(client); await fillGender(client); } catch { /* ignore */ }
   const { data, error } = await client.from("lessons").select("*").order("created_at", { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ lessons: data, cleaned });
@@ -139,6 +166,7 @@ export async function POST(req) {
   const insertedRows = [];
   let skipped = 0;
   for (const row of incoming) {
+    if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
     ensureDate(row);
     // Smart duplicate check against existing lessons on the same day.
     const { data: existing } = await client.from("lessons")
