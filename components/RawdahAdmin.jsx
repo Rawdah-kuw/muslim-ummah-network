@@ -25,14 +25,26 @@ function fmtDate(d) {
     return `${DAYS[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}`;
   } catch { return d; }
 }
+const PRAYER_TIMES = [
+  [/(?:بعد|عقب)\s*العشاء/, 1200], [/قبل\s*العشاء/, 1170],
+  [/(?:بعد|عقب)\s*المغرب/, 1110], [/قبل\s*المغرب/, 1050],
+  [/(?:بعد|عقب)\s*العصر/, 960], [/قبل\s*العصر/, 870],
+  [/(?:بعد|عقب)\s*الظهر/, 750], [/قبل\s*الظهر/, 690],
+  [/(?:بعد|عقب)\s*الضحي/, 540], [/(?:بعد|عقب)\s*(?:الاشراق|الشروق)/, 420],
+  [/(?:بعد|عقب)\s*الفجر/, 330],
+  [/العشاء/, 1195], [/المغرب/, 1105], [/العصر/, 955],
+  [/الظهر/, 745], [/الشروق|الاشراق/, 415], [/الفجر/, 325],
+];
 function parseTime(t) {
   if (!t) return 9999;
-  const n = t.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
-  if (/بعد الفجر/.test(t)) return 330; if (/بعد العصر/.test(t)) return 960;
-  if (/بعد المغرب/.test(t)) return 1110; if (/بعد العشاء/.test(t)) return 1200;
-  const m = n.match(/(\d{1,2}):(\d{2})/); if (!m) return 9999;
+  const s = String(t)
+    .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString())
+    .replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+    .replace(/صلاه/g, " ").replace(/\s+/g, " ").trim();
+  for (const [re, v] of PRAYER_TIMES) if (re.test(s)) return v;
+  const m = s.match(/(\d{1,2}):(\d{2})/); if (!m) return 9999;
   let h = +m[1]; const min = +m[2];
-  const pm = /م|pm|مساء/i.test(n), am = /ص|am|صباح/i.test(n);
+  const pm = /م|pm|مساء/i.test(s), am = /ص|am|صباح/i.test(s);
   if (pm && h < 12) h += 12; if (am && h === 12) h = 0;
   if (!pm && !am && h >= 1 && h <= 7) h += 12;
   return h * 60 + min;
