@@ -389,8 +389,11 @@ export default function Rawdah({ lang = "ar" }) {
         const seen = new Set();
         const horizon = new Date();
         horizon.setDate(horizon.getDate() + 7); // show only the coming week
+        const todayKw = new Date(Date.now() + 3 * 3600 * 1000).toISOString().split("T")[0]; // Kuwait date
         const rows = (data || []).filter((l) => {
           if (l.is_paused) return false; // hide temporarily-paused recurring lessons
+          // Hide ended lessons (dated, non-recurring, already passed) — don't rely on DB cleanup.
+          if (!l.is_recurring && l.lesson_date && l.lesson_date < todayKw) return false;
           // Hide dated lessons more than a week away — they appear a week before.
           if (!l.is_recurring && l.lesson_date && new Date(`${l.lesson_date}T00:00:00`) > horizon) return false;
           // Normalized key (title+teacher+day) collapses spelling/format variants.
