@@ -144,7 +144,7 @@ export default function RawdahAdmin() {
     e.target.value = "";
     if (!files.length) return;
     setBusy(true); setMsg(`جارٍ تحليل ${files.length} ملصق…`);
-    let inserted = 0, skipped = 0;
+    let inserted = 0, skipped = 0, updated = 0;
     const errors = [];
     for (const f of files) {
       try {
@@ -157,13 +157,14 @@ export default function RawdahAdmin() {
         if (!arr.length) { errors.push(`${f.name}: لم يُستخرج درس`); continue; }
         const res = await fetch("/api/rawdah/lessons", { method: "POST", headers, body: JSON.stringify({ lessons: arr }) }).then((x) => x.json());
         if (res.error) { errors.push(res.error); continue; }
-        inserted += res.inserted || 0; skipped += res.skipped || 0;
+        inserted += res.inserted || 0; skipped += res.skipped || 0; updated += res.updated || 0;
       } catch (err) { errors.push(err.message); }
     }
     await load();
     setBusy(false);
     const parts = [];
     if (inserted) parts.push(`أُضيف ${inserted} ✓`);
+    if (updated) parts.push(`حُدّث موضوع ${updated} مجلس`);
     if (skipped) parts.push(`تُجوهل ${skipped} مكرّر`);
     if (errors.length) parts.push(`تنبيه: ${errors.join(" · ")}`);
     setMsg(parts.join(" — ") || "لم يُستخرج أي درس");
@@ -200,6 +201,16 @@ export default function RawdahAdmin() {
     if (res.error) { setMsg("خطأ: " + res.error); return; }
     await load();
     if (res.lessons?.[0]) setOpenId(res.lessons[0].id);
+  }
+  async function mergeDuplicates() {
+    if (!confirm("دمج الدروس المكرّرة (نفس الداعية واليوم والوقت) في بطاقة واحدة، مع الإبقاء على أحدث موضوع؟")) return;
+    setBusy(true);
+    const res = await fetch("/api/rawdah/lessons", { method: "POST", headers, body: JSON.stringify({ action: "merge-slots" }) })
+      .then((x) => x.json()).catch(() => ({ error: "تعذّر الاتصال" }));
+    setBusy(false);
+    if (res.error) { setMsg("خطأ: " + res.error); return; }
+    await load();
+    setMsg(res.merged ? `🔗 دُمج ${res.merged} درساً مكرّراً في نفس التوقيت` : "لا توجد دروس مكرّرة في نفس التوقيت ✓");
   }
 
   if (!authed) {
@@ -243,6 +254,7 @@ export default function RawdahAdmin() {
             <input type="file" accept="image/*" multiple hidden onChange={onFiles} disabled={busy} />
           </label>
           <button className={`${btn} py-2 border border-pearl-300 text-slate-600`} onClick={addManual}>+ إضافة يدويًا</button>
+          <button className={`${btn} py-2 border border-pearl-300 text-slate-600`} onClick={mergeDuplicates} disabled={busy}>🔗 دمج المكرّرات</button>
           <div className="grow" />
           <button className={`${btn} border border-pearl-300 text-slate-500`} onClick={() => setCollapsed(Object.fromEntries([...DAYS, "بدون يوم"].map((d) => [d, true])))}>⬆️ طيّ الكل</button>
           <button className={`${btn} border border-pearl-300 text-slate-500`} onClick={() => setCollapsed({})}>⬇️ فتح الكل</button>

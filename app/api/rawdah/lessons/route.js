@@ -169,6 +169,80 @@ async function healDates(client) {
   return fixes.length;
 }
 
+// ── Weekly-majlis slot handling ─────────────────────────────────────
+// A weekly majlis is identified by teacher + day + time — NOT by its topic,
+// which changes each week. parseTime maps a time label to minutes so «5:30 م»،
+// «٥:٣٠ مساءً» and «بعد العصر» all match reliably.
+const PRAYER_TIMES = [
+  [/(?:بعد|عقب)\s*العشاء/, 1200], [/قبل\s*العشاء/, 1170],
+  [/(?:بعد|عقب)\s*المغرب/, 1110], [/قبل\s*المغرب/, 1050],
+  [/(?:بعد|عقب)\s*العصر/, 960], [/قبل\s*العصر/, 870],
+  [/(?:بعد|عقب)\s*الظهر/, 750], [/قبل\s*الظهر/, 690],
+  [/(?:بعد|عقب)\s*الضحي/, 540], [/(?:بعد|عقب)\s*(?:الاشراق|الشروق)/, 420],
+  [/(?:بعد|عقب)\s*الفجر/, 330],
+  [/العشاء/, 1195], [/المغرب/, 1105], [/العصر/, 955],
+  [/الظهر/, 745], [/الشروق|الاشراق/, 415], [/الفجر/, 325],
+];
+function parseTime(t) {
+  if (!t) return 9999;
+  const s = String(t)
+    .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString())
+    .replace(/[إأآا]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+    .replace(/صلاه/g, " ").replace(/\s+/g, " ").trim();
+  for (const [re, v] of PRAYER_TIMES) if (re.test(s)) return v;
+  const m = s.match(/(\d{1,2}):(\d{2})/); if (!m) return 9999;
+  let h = +m[1]; const min = +m[2];
+  const pm = /م|pm|مساء/i.test(s), am = /ص|am|صباح/i.test(s);
+  if (pm && h < 12) h += 12; if (am && h === 12) h = 0;
+  if (!pm && !am && h >= 1 && h <= 7) h += 12;
+  return h * 60 + min;
+}
+// Slot key = same teacher, same day, same time → the same weekly gathering.
+function slotKey(l) {
+  const tt = parseTime(l.time);
+  if (!l.teacher || !l.day || tt === 9999) return null;
+  return `${normalizeText(l.teacher)}|${l.day}|${tt}`;
+}
+const MERGE_RICH = ["area", "location", "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "gender"];
+// Collapse every group of lessons sharing a slot (teacher+day+time) into ONE
+// card: keep one (recurring/published/fullest), set its topic to the most
+// recent week's, copy over any missing details, then delete the rest.
+async function dedupBySlot(client) {
+  const { data: rows } = await client.from("lessons").select("*");
+  const groups = {};
+  for (const l of rows || []) {
+    const k = slotKey(l);
+    if (!k) continue;
+    (groups[k] = groups[k] || []).push(l);
+  }
+  let merged = 0;
+  for (const g of Object.values(groups)) {
+    if (g.length < 2) continue;
+    g.sort((a, b) => {
+      if (!!b.is_recurring !== !!a.is_recurring) return b.is_recurring ? 1 : -1;
+      if (!!b.is_published !== !!a.is_published) return b.is_published ? 1 : -1;
+      if (fieldCount(b) !== fieldCount(a)) return fieldCount(b) - fieldCount(a);
+      return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+    });
+    const keeper = g[0];
+    const latest = [...g].sort((a, b) =>
+      String(b.lesson_date || b.created_at || "").localeCompare(String(a.lesson_date || a.created_at || "")))[0];
+    const upd = {};
+    if (latest.title && latest.title !== keeper.title) upd.title = latest.title;
+    for (const k of MERGE_RICH) {
+      if (!keeper[k]) { const src = g.find((x) => x[k]); if (src) upd[k] = src[k]; }
+    }
+    if (Object.keys(upd).length) {
+      upd.updated_at = new Date().toISOString();
+      await client.from("lessons").update(upd).eq("id", keeper.id);
+    }
+    const extras = g.slice(1).map((x) => x.id);
+    await client.from("lessons").delete().in("id", extras);
+    merged += extras.length;
+  }
+  return merged;
+}
+
 export async function GET(req) {
   if (!authed(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
@@ -185,18 +259,37 @@ export async function POST(req) {
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
   const client = db();
   const body = await req.json().catch(() => ({}));
+  // Explicit "merge duplicates" action from the admin toolbar.
+  if (body.action === "merge-slots") {
+    const merged = await dedupBySlot(client);
+    return Response.json({ merged });
+  }
   const raw = Array.isArray(body.lessons) ? body.lessons : [body];
   const incoming = raw.flatMap(expandRange).map(pick).filter((r) => r.title && r.day);
   if (!incoming.length) return Response.json({ error: "no-valid-rows" }, { status: 400 });
 
   const insertedRows = [];
-  let skipped = 0;
+  let skipped = 0, updated = 0;
   for (const row of incoming) {
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
     ensureDate(row);
-    // Smart duplicate check against existing lessons on the same day.
-    const { data: existing } = await client.from("lessons")
-      .select("id, title, teacher, lesson_date, is_recurring").eq("day", row.day);
+    const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
+    // Same weekly majlis (teacher+day+time)? Update its topic/details instead of
+    // adding a duplicate — this is what stops weekly posters piling up.
+    const sk = slotKey(row);
+    const slotMatch = sk ? (existing || []).find((ex) => slotKey(ex) === sk) : null;
+    if (slotMatch) {
+      const upd = {};
+      if (row.title && normalizeText(row.title) !== normalizeText(slotMatch.title)) upd.title = row.title;
+      for (const k of MERGE_RICH) if (row[k] && !slotMatch[k]) upd[k] = row[k];
+      if (Object.keys(upd).length) {
+        upd.updated_at = new Date().toISOString();
+        await client.from("lessons").update(upd).eq("id", slotMatch.id);
+        updated++;
+      } else skipped++;
+      continue;
+    }
+    // Fallback: exact title+teacher duplicate on the same day.
     const nt = normalizeText(row.title);
     const nte = normalizeText(row.teacher);
     const dup = (existing || []).some((ex) => {
@@ -209,7 +302,7 @@ export async function POST(req) {
     if (error) return Response.json({ error: error.message }, { status: 500 });
     insertedRows.push(data[0]);
   }
-  return Response.json({ lessons: insertedRows, inserted: insertedRows.length, skipped });
+  return Response.json({ lessons: insertedRows, inserted: insertedRows.length, updated, skipped });
 }
 
 export async function PATCH(req) {
