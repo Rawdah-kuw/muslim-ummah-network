@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ImageDown } from "lucide-react";
+import { Share2 } from "lucide-react";
+import { shareCanvas } from "@/lib/shareCanvas";
 
 // Draws the quote onto a 1080×1080 dark-green card (the app's logo background)
-// and downloads it as a PNG. One language per page language.
+// and shares it as a PNG via the native share sheet (download fallback on
+// desktop). One language per page language.
 export default function QuoteDownload({ q, lang, t }) {
   const [busy, setBusy] = useState(false);
 
@@ -94,28 +96,8 @@ export default function QuoteDownload({ q, lang, t }) {
       ctx.font = "400 26px Tajawal, sans-serif";
       ctx.fillText("muslimummah.app", S / 2, 892);
 
-      const triggerDownload = (url, revoke) => {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "muslim-ummah-quote.png";
-        a.rel = "noopener";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        if (revoke) setTimeout(() => URL.revokeObjectURL(url), 5000);
-      };
-      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      if (canvas.toBlob) {
-        canvas.toBlob((blob) => {
-          if (!blob) { triggerDownload(canvas.toDataURL("image/png"), false); return; }
-          const url = URL.createObjectURL(blob);
-          if (isIOS) { window.open(url, "_blank"); setTimeout(() => URL.revokeObjectURL(url), 10000); }
-          else triggerDownload(url, true);
-        }, "image/png");
-      } else {
-        triggerDownload(canvas.toDataURL("image/png"), false);
-      }
+      const caption = `${text}\n${author ? "— " + author : ""}\n\n${t.shareText}\nmuslimummah.app`;
+      await shareCanvas(canvas, "muslim-ummah-quote.png", caption);
     } finally {
       setBusy(false);
     }
@@ -124,7 +106,7 @@ export default function QuoteDownload({ q, lang, t }) {
   return (
     <button type="button" onClick={handle} disabled={busy}
       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-300 hover:bg-white/10 transition-colors disabled:opacity-60">
-      <ImageDown size={15} /> {t.downloadImage}
+      <Share2 size={15} /> {t.shareImage}
     </button>
   );
 }

@@ -1,5 +1,4 @@
 import { Sparkles } from "lucide-react";
-import ShareButton from "./ShareButton";
 import WirdDownload from "./WirdDownload";
 import { WIRD } from "@/lib/wird";
 
@@ -10,7 +9,6 @@ export default function DailyWird({ t, lang }) {
   const start = new Date(now.getFullYear(), 0, 0);
   const day = Math.floor((now - start) / 86400000);
   const item = WIRD[day % WIRD.length];
-  const shareTitle = lang === "ar" ? item.ar : item.en;
 
   return (
     <section className="bg-pearl-50 border-y border-pearl-200">
@@ -28,8 +26,6 @@ export default function DailyWird({ t, lang }) {
         <p className="text-sm text-sage-600 mb-6">{item.source[lang]}</p>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <ShareButton t={t} path={`/${lang}`} title={shareTitle}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors" />
           <WirdDownload item={item} lang={lang} t={t} />
         </div>
       </div>

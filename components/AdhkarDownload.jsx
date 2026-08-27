@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ImageDown } from "lucide-react";
+import { Share2 } from "lucide-react";
+import { shareCanvas } from "@/lib/shareCanvas";
 
-// Draws a single dhikr onto a 1080×1080 cream card and downloads it as a PNG.
+// Draws a single dhikr onto a 1080×1080 cream card and shares it as a PNG via
+// the native share sheet (download fallback on desktop).
 // The English page shows the Arabic with its English translation beneath.
 export default function AdhkarDownload({ d, lang, t }) {
   const [busy, setBusy] = useState(false);
@@ -118,28 +120,8 @@ export default function AdhkarDownload({ d, lang, t }) {
       ctx.font = "400 26px Tajawal, sans-serif";
       ctx.fillText("muslimummah.app", S / 2, 906);
 
-      const triggerDownload = (url, revoke) => {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "muslim-ummah-dhikr.png";
-        a.rel = "noopener";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        if (revoke) setTimeout(() => URL.revokeObjectURL(url), 5000);
-      };
-      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      if (canvas.toBlob) {
-        canvas.toBlob((blob) => {
-          if (!blob) { triggerDownload(canvas.toDataURL("image/png"), false); return; }
-          const url = URL.createObjectURL(blob);
-          if (isIOS) { window.open(url, "_blank"); setTimeout(() => URL.revokeObjectURL(url), 10000); }
-          else triggerDownload(url, true);
-        }, "image/png");
-      } else {
-        triggerDownload(canvas.toDataURL("image/png"), false);
-      }
+      const caption = `${prefix ? prefix + "\n" : ""}${d.ar}${enText ? "\n" + enText : ""}${src ? "\n" + src : ""}\n\n${t.shareText}\nmuslimummah.app`;
+      await shareCanvas(canvas, "muslim-ummah-dhikr.png", caption);
     } finally {
       setBusy(false);
     }
@@ -148,7 +130,7 @@ export default function AdhkarDownload({ d, lang, t }) {
   return (
     <button type="button" onClick={handle} disabled={busy}
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors disabled:opacity-60">
-      <ImageDown size={14} /> {t.downloadImage}
+      <Share2 size={14} /> {t.shareImage}
     </button>
   );
 }

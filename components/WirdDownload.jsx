@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ImageDown } from "lucide-react";
+import { Share2 } from "lucide-react";
+import { shareCanvas } from "@/lib/shareCanvas";
 
 // Draws the day's reminder onto a 1080×1080 canvas (Instagram square) with the
-// site identity, then downloads it as a PNG. No server, no library.
+// site identity, then shares it as a PNG through the native share sheet
+// (falls back to a download on desktop). No server, no library.
 export default function WirdDownload({ item, lang, t }) {
   const [busy, setBusy] = useState(false);
 
@@ -103,30 +105,8 @@ export default function WirdDownload({ item, lang, t }) {
       );
       ctx.fillText("muslimummah.app", S / 2, 1002);
 
-      // Robust download across browsers (blob URL + in-DOM anchor; iOS fallback).
-      const triggerDownload = (url, revoke) => {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "muslim-ummah-wird.png";
-        a.rel = "noopener";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        if (revoke) setTimeout(() => URL.revokeObjectURL(url), 5000);
-      };
-      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-      if (canvas.toBlob) {
-        canvas.toBlob((blob) => {
-          if (!blob) { triggerDownload(canvas.toDataURL("image/png"), false); return; }
-          const url = URL.createObjectURL(blob);
-          // iOS ignores the download attribute → open the image so it can be saved by long-press.
-          if (isIOS) { window.open(url, "_blank"); setTimeout(() => URL.revokeObjectURL(url), 10000); }
-          else triggerDownload(url, true);
-        }, "image/png");
-      } else {
-        triggerDownload(canvas.toDataURL("image/png"), false);
-      }
+      const caption = `${item.ar}\n${item.en}\n${item.source[lang] || item.source.ar || ""}\n\n${t.shareText}\nmuslimummah.app`;
+      await shareCanvas(canvas, "muslim-ummah-wird.png", caption);
     } finally {
       setBusy(false);
     }
@@ -135,7 +115,7 @@ export default function WirdDownload({ item, lang, t }) {
   return (
     <button type="button" onClick={handle} disabled={busy}
       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border border-sage-300 text-sage-600 bg-white hover:bg-sage-100 transition-colors disabled:opacity-60">
-      <ImageDown size={15} /> {t.downloadImage}
+      <Share2 size={15} /> {t.shareImage}
     </button>
   );
 }
