@@ -30,7 +30,7 @@ export default function AdhkarDownload({ d, lang, t }) {
       ctx.direction = ar ? "rtl" : "ltr";
       ctx.fillStyle = "#4F7263";
       ctx.font = "500 32px Tajawal, sans-serif";
-      ctx.fillText(ar ? "من الأذكار 🌿" : "Daily Adhkar 🌿", S / 2, 200);
+      ctx.fillText(ar ? "من الأذكار" : "Daily Adhkar", S / 2, 200);
 
       const maxW = S - 300;
       const wrap = (str, size, fam, weight) => {
@@ -49,25 +49,35 @@ export default function AdhkarDownload({ d, lang, t }) {
 
       const prefix = ar ? (d.prefix || "") : (d.prefixEn || d.prefix || "");
       const enText = showEn ? d.en : "";
-      let arSize = 52, enSize = 34, preSize = 30;
-      let preLines = [], arLines = [], enLines = [];
+      const src = ar ? d.source : (d.sourceEn || d.source);
+      const note = ar ? d.note : (d.noteEn || d.note);
+      // Note wraps too, so a long benefit never overflows or hits the footer.
+      const wrapNote = (str, size) => wrap(str, size, "Tajawal, sans-serif", 400);
+
+      let arSize = 50, enSize = 32, preSize = 28;
+      let preLines = [], arLines = [], enLines = [], noteLines = [];
+      const srcH = src ? 44 : 0;
       const measure = () => {
         preLines = prefix ? wrap(prefix, preSize, "Amiri, serif", 600) : [];
         arLines = wrap(d.ar, arSize, "Amiri, serif", 700);
         enLines = showEn ? wrap(enText, enSize, "Inter, serif", 500) : [];
+        noteLines = note ? wrapNote(note, 23) : [];
+        // Full block = prefix + arabic + english + source + note.
         return preLines.length * preSize * 1.6 + (prefix ? 14 : 0) +
           arLines.length * arSize * 1.7 +
-          (showEn ? 24 + enLines.length * enSize * 1.45 : 0);
+          (showEn ? 20 + enLines.length * enSize * 1.45 : 0) +
+          srcH + noteLines.length * 32;
       };
-      let total = measure(), guard = 0;
-      while (total > 500 && arSize > 24 && guard++ < 24) {
+      let full = measure(), guard = 0;
+      // Keep the whole block within ~540px so it always clears the footer.
+      while (full > 540 && arSize > 22 && guard++ < 26) {
         arSize -= 3;
-        enSize = Math.max(23, enSize - 2);
-        preSize = Math.max(22, preSize - 2);
-        total = measure();
+        enSize = Math.max(22, enSize - 2);
+        preSize = Math.max(20, preSize - 2);
+        full = measure();
       }
 
-      let y = 460 - total / 2;
+      let y = 465 - full / 2;
       if (prefix) {
         ctx.direction = "rtl";
         ctx.fillStyle = "#4F7263";
@@ -80,36 +90,33 @@ export default function AdhkarDownload({ d, lang, t }) {
       ctx.font = `700 ${arSize}px Amiri, serif`;
       for (const l of arLines) { y += arSize * 1.7; ctx.fillText(l, S / 2, y - arSize * 0.35); }
       if (showEn) {
-        y += 24;
+        y += 20;
         ctx.direction = "ltr";
         ctx.fillStyle = "#44603F";
         ctx.font = `500 ${enSize}px Inter, serif`;
         for (const l of enLines) { y += enSize * 1.45; ctx.fillText(l, S / 2, y - enSize * 0.3); }
       }
-
-      const src = ar ? d.source : (d.sourceEn || d.source);
-      const note = ar ? d.note : (d.noteEn || d.note);
       ctx.direction = ar ? "rtl" : "ltr";
       if (src) {
+        y += 44;
         ctx.fillStyle = "#4F7263";
-        ctx.font = "600 28px Tajawal, sans-serif";
-        y += 42;
-        ctx.fillText(src, S / 2, y);
+        ctx.font = "600 27px Tajawal, sans-serif";
+        ctx.fillText(src, S / 2, y - 8);
       }
-      if (note) {
+      if (noteLines.length) {
         ctx.fillStyle = "#94A3B8";
-        ctx.font = "400 24px Tajawal, sans-serif";
-        y += 36;
-        ctx.fillText(note, S / 2, y);
+        ctx.font = "400 23px Tajawal, sans-serif";
+        for (const l of noteLines) { y += 32; ctx.fillText(l, S / 2, y - 8); }
       }
 
+      // Footer — fixed near the bottom, always below the centred block.
       ctx.direction = ar ? "rtl" : "ltr";
       ctx.fillStyle = "#1B3B2B";
       ctx.font = "700 38px Tajawal, sans-serif";
-      ctx.fillText(ar ? "شبكة أمة الإسلام" : "Muslim Ummah Network", S / 2, 838);
+      ctx.fillText(ar ? "شبكة أمة الإسلام" : "Muslim Ummah Network", S / 2, 858);
       ctx.fillStyle = "#94A3B8";
       ctx.font = "400 26px Tajawal, sans-serif";
-      ctx.fillText("muslimummah.app", S / 2, 892);
+      ctx.fillText("muslimummah.app", S / 2, 906);
 
       const triggerDownload = (url, revoke) => {
         const a = document.createElement("a");
