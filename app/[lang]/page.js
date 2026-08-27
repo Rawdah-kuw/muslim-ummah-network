@@ -2,6 +2,7 @@ import { STR, LANGS } from "@/lib/i18n";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import DailyWird from "@/components/DailyWird";
+import DailyQuote from "@/components/DailyQuote";
 import About from "@/components/About";
 import Library from "@/components/Library";
 import Feed from "@/components/Feed";
@@ -21,6 +22,7 @@ export default function Page({ params }) {
       <Header t={t} lang={lang} />
       <Hero t={t} />
       <DailyWird t={t} lang={lang} />
+      <DailyQuote t={t} lang={lang} />
       <About t={t} lang={lang} preview />
       <Library t={t} lang={lang} preview />
       <Curriculum t={t} lang={lang} rtl={rtl} preview />
