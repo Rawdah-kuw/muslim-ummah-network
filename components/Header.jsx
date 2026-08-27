@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Languages, Moon, Sun } from "lucide-react";
 import PearlMark from "./PearlMark";
 
-const NAV_IDS = ["about", "library", "curriculum", "rawdah", "search"];
+const NAV_IDS = ["about", "library", "curriculum", "adhkar", "rawdah", "search"];
 const navHref = (lang, id) =>
   id === "about" ? `/${lang}/about`
   : id === "library" ? `/${lang}/library`
   : id === "curriculum" ? `/${lang}/curriculum`
+  : id === "adhkar" ? `/${lang}/adhkar`
   : id === "rawdah" ? `/${lang}/rawdah`
   : `/${lang}#${id}`;
 
