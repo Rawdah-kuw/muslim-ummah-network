@@ -32,12 +32,12 @@ export default function WirdDownload({ item, lang, t }) {
       ctx.font = "500 34px Tajawal, sans-serif";
       ctx.fillText(`${t.wirdLabel} · ${t.wirdTypes[item.type]}`, S / 2, 195);
 
-      const text = rtl ? item.ar : item.en;
-      const fam = rtl ? "Amiri, serif" : "Inter, serif";
-      const maxW = S - 220;
-      const wrap = (size) => {
+      // On the website the wird card shows BOTH the Arabic original and the
+      // English meaning together (the app shows one language; the website both).
+      const maxW = S - 240;
+      const wrap = (str, size, fam) => {
         ctx.font = `700 ${size}px ${fam}`;
-        const words = text.split(" ");
+        const words = str.split(" ");
         const lines = [];
         let line = "";
         for (const w of words) {
@@ -51,24 +51,45 @@ export default function WirdDownload({ item, lang, t }) {
         return lines;
       };
 
-      let size = 64;
-      let lines = wrap(size);
-      while (lines.length * size * 1.55 > 520 && size > 30) {
-        size -= 4;
-        lines = wrap(size);
+      let arSize = 62;
+      let arLines = wrap(item.ar, arSize, "Amiri, serif");
+      while (arLines.length * arSize * 1.6 > 380 && arSize > 28) {
+        arSize -= 4;
+        arLines = wrap(item.ar, arSize, "Amiri, serif");
       }
-      const lineH = size * 1.55;
-      ctx.font = `700 ${size}px ${fam}`;
-      ctx.fillStyle = "#1B3B2B";
-      let y = 500 - ((lines.length - 1) * lineH) / 2;
-      for (const l of lines) {
-        ctx.fillText(l, S / 2, y);
-        y += lineH;
+      let enSize = 38;
+      let enLines = wrap(item.en, enSize, "Inter, serif");
+      while (enLines.length * enSize * 1.5 > 240 && enSize > 22) {
+        enSize -= 3;
+        enLines = wrap(item.en, enSize, "Inter, serif");
       }
+      const arLH = arSize * 1.6, enLH = enSize * 1.5;
+      const totalH = arLines.length * arLH + 60 + enLines.length * enLH;
+      let y = 470 - totalH / 2 + arSize;
 
+      ctx.direction = "rtl";
+      ctx.font = `700 ${arSize}px Amiri, serif`;
+      ctx.fillStyle = "#1B3B2B";
+      for (const l of arLines) { ctx.fillText(l, S / 2, y); y += arLH; }
+
+      y += 6;
+      ctx.strokeStyle = "#D7E4DD";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(S / 2 - 80, y);
+      ctx.lineTo(S / 2 + 80, y);
+      ctx.stroke();
+      y += 46;
+
+      ctx.direction = "ltr";
+      ctx.font = `500 ${enSize}px Inter, serif`;
+      ctx.fillStyle = "#44603F";
+      for (const l of enLines) { ctx.fillText(l, S / 2, y); y += enLH; }
+
+      ctx.direction = "rtl";
       ctx.fillStyle = "#4F7263";
-      ctx.font = "500 36px Tajawal, sans-serif";
-      ctx.fillText(item.source[lang], S / 2, y + 24);
+      ctx.font = "500 32px Tajawal, sans-serif";
+      ctx.fillText(item.source.ar || item.source[lang] || "", S / 2, y + 16);
 
       ctx.fillStyle = "#1B3B2B";
       ctx.font = "700 40px Tajawal, sans-serif";
