@@ -156,6 +156,10 @@ async function insertLessons(client, lessons) {
     for (const k of COLS) if (raw[k] !== undefined) row[k] = raw[k];
     if (!row.day) { skipped++; continue; } // need a day to place or merge the post
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
+    // Recurrence is disabled everywhere now: every lesson is a dated one-time
+    // entry (auto-removed after its date). Without this, Telegram uploads kept
+    // creating dateless "recurring" rows that never expire.
+    row.is_recurring = false;
     ensureDate(row);
     const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
     const nt = normalizeText(row.title), nte = normalizeText(row.teacher);
