@@ -95,17 +95,8 @@ function Fields({ value, onChange }) {
       <div><label className={lbl}>رابط زوم (للرجال)</label><input className={inp} value={value.zoom_link || ""} onChange={(e) => set("zoom_link", e.target.value)} /></div>
       <div><label className={lbl}>رمز الزوم</label><input className={inp} value={value.zoom_passcode || ""} onChange={(e) => set("zoom_passcode", e.target.value)} /></div>
       <div><label className={lbl}>التاريخ</label><input type="date" className={inp} value={value.lesson_date || ""} onChange={(e) => set("lesson_date", e.target.value)} /></div>
-      <div className="sm:col-span-2 bg-pearl-100 rounded-lg p-3">
-        <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
-          <input type="checkbox" checked={!!value.is_recurring} onChange={(e) => set("is_recurring", e.target.checked)} />
-          🔁 درس أسبوعي متكرّر (يظهر كل أسبوع تلقائيًا)
-        </label>
-        {value.is_recurring && (
-          <label className="flex items-center gap-2 text-sm text-ink cursor-pointer mt-2">
-            <input type="checkbox" checked={!!value.is_paused} onChange={(e) => set("is_paused", e.target.checked)} />
-            ⏸️ موقوف مؤقتًا (للإجازات)
-          </label>
-        )}
+      <div className="sm:col-span-2 bg-pearl-100 rounded-lg p-3 text-xs text-sage-700 leading-relaxed">
+        📅 كل درس يظهر حتى تاريخه ثم يُزال تلقائيًا. لعرضه في أسبوع آخر أضيفيه من جديد بالتاريخ الجديد — وإضافة الدرس نفسه مرّة ثانية تُحدّثه ولا تُكرّره.
       </div>
     </div>
   );

@@ -272,32 +272,31 @@ export async function POST(req) {
   let skipped = 0, updated = 0;
   for (const row of incoming) {
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
+    // Recurrence is disabled: every lesson is a dated one-time entry (auto-removed
+    // after its date). This is what stops the same lesson piling up week after week.
+    row.is_recurring = false;
     ensureDate(row);
     const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
-    // Same weekly majlis (teacher+day+time)? Update its topic/details instead of
-    // adding a duplicate — this is what stops weekly posters piling up.
+    const nt = normalizeText(row.title);
+    const nte = normalizeText(row.teacher);
+    // Re-adding the same gathering UPDATES its card instead of duplicating it —
+    // matched by slot (teacher+day+time), or by topic+teacher when time is absent.
     const sk = slotKey(row);
-    const slotMatch = sk ? (existing || []).find((ex) => slotKey(ex) === sk) : null;
-    if (slotMatch) {
+    const match =
+      (sk ? (existing || []).find((ex) => slotKey(ex) === sk) : null) ||
+      (existing || []).find((ex) => normalizeText(ex.title) === nt && normalizeText(ex.teacher) === nte);
+    if (match) {
       const upd = {};
-      if (row.title && normalizeText(row.title) !== normalizeText(slotMatch.title)) upd.title = row.title;
-      for (const k of MERGE_RICH) if (row[k] && !slotMatch[k]) upd[k] = row[k];
+      if (row.title && nt !== normalizeText(match.title)) upd.title = row.title;
+      if (row.lesson_date && row.lesson_date !== match.lesson_date) upd.lesson_date = row.lesson_date;
+      for (const k of MERGE_RICH) if (row[k] && row[k] !== match[k]) upd[k] = row[k];
       if (Object.keys(upd).length) {
         upd.updated_at = new Date().toISOString();
-        await client.from("lessons").update(upd).eq("id", slotMatch.id);
+        await client.from("lessons").update(upd).eq("id", match.id);
         updated++;
       } else skipped++;
       continue;
     }
-    // Fallback: exact title+teacher duplicate on the same day.
-    const nt = normalizeText(row.title);
-    const nte = normalizeText(row.teacher);
-    const dup = (existing || []).some((ex) => {
-      if (normalizeText(ex.title) !== nt || normalizeText(ex.teacher) !== nte) return false;
-      if (ex.is_recurring) return true;
-      return (ex.lesson_date || null) === (row.lesson_date || null) || !row.lesson_date;
-    });
-    if (dup) { skipped++; continue; }
     const { data, error } = await client.from("lessons").insert([row]).select();
     if (error) return Response.json({ error: error.message }, { status: 500 });
     insertedRows.push(data[0]);
