@@ -71,14 +71,25 @@ function todayKwIso() {
 }
 // A poster with several weekdays + a date range («الأيام: الأحد…الخميس» و«من 5 يوليو إلى 5 أغسطس»)
 // becomes one dated lesson per occurrence, so each day's schedule shows it correctly.
+function addDaysIso(iso, n) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
 function expandRange(row) {
-  const to = row.date_to;
-  // A bounded series (end date + days) with no explicit start → start from today.
-  const from = row.date_from ||
-    (to && ((Array.isArray(row.days) && row.days.length) || row.day) ? todayKwIso() : null);
   const days = Array.isArray(row.days) && row.days.length
     ? row.days.filter((d) => DAYS_AR.includes(d))
     : (row.day ? [row.day] : []);
+  let from = row.date_from;
+  let to = row.date_to;
+  // Daily / several-days-a-week with no explicit range → ongoing: cover the next
+  // 6 weeks from today so it shows on each of its days (no recurrence flag needed).
+  if (days.length >= 2 && (!from || !to)) {
+    from = from || todayKwIso();
+    to = to || addDaysIso(from, 42);
+  } else if (to && !from) {
+    from = todayKwIso(); // bounded series with only an end date
+  }
   if (!from || !to || !days.length) return [row];
   const start = new Date(`${from}T00:00:00Z`);
   const end = new Date(`${to}T00:00:00Z`);

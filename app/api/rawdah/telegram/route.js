@@ -33,7 +33,7 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 ▪ telegram_link: رابط تيليجرام كامل (t.me/…) إن وُجد أو "".
 ▪ lesson_date: تاريخ YYYY-MM-DD إن وُجد أو "".
 ▪ is_recurring: اجعليه false دائماً (خاصية التكرار متوقفة).
-▪ days: مصفوفة كل أيام السلسلة إن كانت عدة أيام لنفس الدرس («الأيام: الاثنين • الثلاثاء») وإلا [].
+▪ days: مصفوفة كل أيام السلسلة إن كانت عدة أيام لنفس الدرس («الأيام: الاثنين • الثلاثاء»). وإن كان الدرس **يومياً** («يومياً»، «كل يوم»، «daily») فاجعليها كل الأيام السبعة: ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"]. وإلا [].
 ▪ date_from / date_to: بداية ونهاية السلسلة بصيغة YYYY-MM-DD. إن ذُكرت نهاية فقط («حتى ١٠ أكتوبر») فاجعلي date_from = تاريخ اليوم. وإلا "".
 مهم: السلسلة بعدة أيام ومدى = **عنصر واحد** مع days وdate_from وdate_to (لا تكرّري العنصر). التواريخ المفردة الصريحة ضعيها في lesson_date.
 
@@ -73,14 +73,25 @@ function todayKwIso() {
   const n = new Date(Date.now() + 3 * 3600 * 1000);
   return `${n.getUTCFullYear()}-${String(n.getUTCMonth() + 1).padStart(2, "0")}-${String(n.getUTCDate()).padStart(2, "0")}`;
 }
+function addDaysIso(iso, n) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
 function expandRange(row) {
-  const to = row.date_to;
   const days = Array.isArray(row.days) && row.days.length
     ? row.days.filter((d) => DAYS_AR.includes(d))
     : (row.day ? [row.day] : []);
-  // A bounded series (end date + days) with no explicit start → start from today,
-  // so «كل اثنين وثلاثاء حتى ١٠ أكتوبر» expands to the right individual dates.
-  const from = row.date_from || (to && days.length ? todayKwIso() : null);
+  let from = row.date_from;
+  let to = row.date_to;
+  // Daily / several-days-a-week with no explicit range → ongoing: cover the next
+  // 6 weeks from today so it shows on each of its days (no recurrence flag needed).
+  if (days.length >= 2 && (!from || !to)) {
+    from = from || todayKwIso();
+    to = to || addDaysIso(from, 42);
+  } else if (to && !from) {
+    from = todayKwIso(); // bounded series with only an end date
+  }
   if (!from || !to || !days.length) return [row];
   const start = new Date(`${from}T00:00:00Z`);
   const end = new Date(`${to}T00:00:00Z`);
