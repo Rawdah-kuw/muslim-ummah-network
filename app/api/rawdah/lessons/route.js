@@ -65,10 +65,17 @@ function nextDateForDay(day) {
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
 }
 
+function todayKwIso() {
+  const n = new Date(Date.now() + 3 * 3600 * 1000);
+  return `${n.getUTCFullYear()}-${String(n.getUTCMonth() + 1).padStart(2, "0")}-${String(n.getUTCDate()).padStart(2, "0")}`;
+}
 // A poster with several weekdays + a date range («الأيام: الأحد…الخميس» و«من 5 يوليو إلى 5 أغسطس»)
 // becomes one dated lesson per occurrence, so each day's schedule shows it correctly.
 function expandRange(row) {
-  const from = row.date_from, to = row.date_to;
+  const to = row.date_to;
+  // A bounded series (end date + days) with no explicit start → start from today.
+  const from = row.date_from ||
+    (to && ((Array.isArray(row.days) && row.days.length) || row.day) ? todayKwIso() : null);
   const days = Array.isArray(row.days) && row.days.length
     ? row.days.filter((d) => DAYS_AR.includes(d))
     : (row.day ? [row.day] : []);

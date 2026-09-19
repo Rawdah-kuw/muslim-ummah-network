@@ -13,7 +13,7 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 
 اقرئي كل النصوص (العناوين، الزوايا، الأسفل، بجانب الأيقونات، الوسوم الملوّنة).
 
-حدّدي عدد الدروس: درس واحد → عنصر واحد؛ جدول أسبوعي → كل الدروس؛ درس متكرر عدة أيام → عنصر واحد باليوم الأول و is_recurring=true.
+حدّدي عدد الدروس: درس واحد → عنصر واحد؛ جدول فيه عدة دروس/معلمين → عنصر لكل درس. لا تستخدمي التكرار (is_recurring) أبداً. أما السلسلة الواحدة بأيام محددة ومدى («كل اثنين وثلاثاء حتى ١٠ أكتوبر»، أو «من ٥ إلى ٢٠ أكتوبر») فاجعليها **عنصراً واحداً** مع days (كل الأيام) وdate_from وdate_to، والنظام يولّد تلقائياً درساً مؤرّخاً لكل يوم في المدى — فاحسبي التواريخ صحيحةً بناءً على تاريخ اليوم المذكور أدناه.
 
 الحقول لكل درس:
 ▪ title: عنوان الدرس بدون اسم الداعية.
@@ -24,17 +24,19 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 ▪ area: منطقة الكويت فقط أو "".
 ▪ location: اسم المسجد كاملاً مع رقم القطعة إن وُجد أو "".
 ▪ types: array من: "حضوري"، "اونلاين"، "مسجل".
-▪ instagram: اسم الحساب بدون @ أو "".
+▪ instagram: حساب الداعية أو الدرس نفسه فقط، بدون @. لا تأخذيه من حساب المصمّم أو الجهة المنظِّمة أو أي شخص آخر ظاهر في البوستر، واربطي كل حساب بالداعية الصحيحة إن تعدّد المعلّمون. إن لم تتأكّدي أنه يخص الداعية اتركيه "".
 ▪ phone: أرقام فقط بالإنجليزية أو "".
 ▪ channel_link: رابط قناة/قروب واتساب أو تلغرام أو "".
 ▪ zoom_link: رابط زوم كامل يبدأ https:// أو "".
 ▪ zoom_passcode: رمز الزوم أو "".
 ▪ telegram_link: رابط تيليجرام كامل (t.me/…) إن وُجد أو "".
 ▪ lesson_date: تاريخ YYYY-MM-DD إن وُجد أو "".
-▪ is_recurring: true إن كان أسبوعياً متكرراً وإلا false.
-▪ days: مصفوفة الأيام إن ذكر البوستر عدة أيام لنفس الدرس («الأيام: الأحد • الإثنين • الأربعاء • الخميس») وإلا [].
-▪ date_from / date_to: إن ذُكر نطاق («ابتداءً من 5 يوليو ولغاية 5 أغسطس 2026») بصيغة YYYY-MM-DD وإلا "".
-مهم: البوستر بعدة أيام ونطاق تواريخ = **درس واحد** مع days وdate_from وdate_to (لا تكرّريه).
+▪ is_recurring: اجعليه false دائماً (خاصية التكرار متوقفة).
+▪ days: مصفوفة كل أيام السلسلة إن كانت عدة أيام لنفس الدرس («الأيام: الاثنين • الثلاثاء») وإلا [].
+▪ date_from / date_to: بداية ونهاية السلسلة بصيغة YYYY-MM-DD. إن ذُكرت نهاية فقط («حتى ١٠ أكتوبر») فاجعلي date_from = تاريخ اليوم. وإلا "".
+مهم: السلسلة بعدة أيام ومدى = **عنصر واحد** مع days وdate_from وdate_to (لا تكرّري العنصر). التواريخ المفردة الصريحة ضعيها في lesson_date.
+
+دقة عالية: كل حقل يجب أن يخص الدرس/الداعية الصحيحة تماماً. عند أي شك في حقل (اسم حساب، رقم، رابط، وقت) اتركيه "" بدل التخمين — الخطأ أسوأ من الفراغ.
 
 تكملة منشور سابق: قد يكون هذا المنشور تكملةً لبوستر أُرسل قبله (مثلاً نصّ فيه روابط الزوم/تيليجرام/واتساب أو الوقت فقط، لنفس الدرس). في هذه الحالة استخرجي كل ما هو موجود فعلاً ولو كان جزئياً (الداعية/اليوم/الوقت/الروابط/المكان) واتركي الباقي "". لا تخترعي معلومات غير موجودة. الروابط غالباً تكون في النصوص، والأوقات والأماكن غالباً في الصور — لذا كل منشور قد يحمل جزءاً من الدرس. لا تردّي {"error":"ليس بوستر درس"} إلا إذا لم يكن للمنشور علاقة بدرس ديني إطلاقاً؛ أما إذا كان فيه ولو داعية أو يوم أو رابط لدرس، فاستخرجيه.
 
@@ -66,11 +68,18 @@ function weekdayOf(d) {
   if (!d) return null;
   return DAYS_AR[new Date(d + "T00:00:00Z").getUTCDay()];
 }
+function todayKwIso() {
+  const n = new Date(Date.now() + 3 * 3600 * 1000);
+  return `${n.getUTCFullYear()}-${String(n.getUTCMonth() + 1).padStart(2, "0")}-${String(n.getUTCDate()).padStart(2, "0")}`;
+}
 function expandRange(row) {
-  const from = row.date_from, to = row.date_to;
+  const to = row.date_to;
   const days = Array.isArray(row.days) && row.days.length
     ? row.days.filter((d) => DAYS_AR.includes(d))
     : (row.day ? [row.day] : []);
+  // A bounded series (end date + days) with no explicit start → start from today,
+  // so «كل اثنين وثلاثاء حتى ١٠ أكتوبر» expands to the right individual dates.
+  const from = row.date_from || (to && days.length ? todayKwIso() : null);
   if (!from || !to || !days.length) return [row];
   const start = new Date(`${from}T00:00:00Z`);
   const end = new Date(`${to}T00:00:00Z`);
@@ -236,16 +245,18 @@ export async function POST(req) {
 
   // Build the content for Claude (photo caption or plain text).
   const caption = (msg.caption || msg.text || "").trim();
+  const promptText = PROMPT +
+    `\n\nتاريخ اليوم: ${todayKwIso()} (توقيت الكويت). احسبي كل التواريخ بناءً عليه.`;
   let content = null;
   if (msg.photo && msg.photo.length) {
     const img = await downloadPhoto(msg.photo[msg.photo.length - 1].file_id);
     console.log("RAWDAH_TG photo-download", !!img);
     if (img) {
       content = [{ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } },
-        { type: "text", text: PROMPT + (caption ? `\n\nالتعليق المرفق: ${caption}` : "") }];
+        { type: "text", text: promptText + (caption ? `\n\nالتعليق المرفق: ${caption}` : "") }];
     }
   } else if (caption) {
-    content = [{ type: "text", text: PROMPT + `\n\nالنص التالي من منشور تلغرام:\n${caption}` }];
+    content = [{ type: "text", text: promptText + `\n\nالنص التالي من منشور تلغرام:\n${caption}` }];
   }
   if (!content) { console.log("RAWDAH_TG no-content"); return Response.json({ ok: true }); }
 
