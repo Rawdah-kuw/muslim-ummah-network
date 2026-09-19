@@ -96,7 +96,13 @@ export default function QuoteDownload({ q, lang, t }) {
       ctx.font = "400 26px Tajawal, sans-serif";
       ctx.fillText("muslimummah.app", S / 2, 892);
 
-      const caption = `${text}\n${author ? "— " + author : ""}\n\n${t.shareText}\nmuslimummah.app`;
+      const attribution = cited
+        ? `${author ? author + " — " : ""}${ar ? `مقتبَس من كتاب «${book}»` : `Quoted from “${book}”`}`
+        : `${author || ""}${book ? (ar ? ` · من كتاب «${book}»` : ` · from “${book}”`) : ""}`;
+      const encourage = ar
+        ? "📖 لمزيد من القراءة، الكتاب متاح مجانًا على muslimummah.app"
+        : "📖 For more, read the full book free at muslimummah.app";
+      const caption = `«${text}»\n${attribution.trim()}\n\n${encourage}`;
       await shareCanvas(canvas, "muslim-ummah-quote.png", caption);
     } finally {
       setBusy(false);
