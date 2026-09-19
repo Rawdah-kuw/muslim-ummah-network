@@ -160,11 +160,11 @@ async function insertLessons(client, lessons) {
   const COLS = ["title", "teacher", "gender", "day", "time", "area", "location", "types",
     "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "telegram_link",
     "lesson_date", "is_recurring", "is_paused", "is_published"];
-  let inserted = 0, updated = 0, skipped = 0;
+  let inserted = 0, updated = 0, dup = 0, noDay = 0, noTitle = 0;
   for (const raw of lessons.flatMap(expandRange)) {
     const row = {};
     for (const k of COLS) if (raw[k] !== undefined) row[k] = raw[k];
-    if (!row.day) { skipped++; continue; } // need a day to place or merge the post
+    if (!row.day) { noDay++; continue; } // no weekday → can't place it on the schedule
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
     // Recurrence is disabled everywhere now: every lesson is a dated one-time
     // entry (auto-removed after its date). Without this, Telegram uploads kept
@@ -204,15 +204,15 @@ async function insertLessons(client, lessons) {
         upd.updated_at = new Date().toISOString();
         await client.from("lessons").update(upd).eq("id", match.id);
         updated++;
-      } else skipped++;
+      } else dup++; // matched an existing lesson with nothing new to add
       continue;
     }
-    if (!row.title) { skipped++; continue; } // a partial post with nothing to attach to
+    if (!row.title) { noTitle++; continue; } // a partial post with nothing to attach to
     row.is_published = !!(row.title && row.teacher && row.time); // auto-publish complete
     const { error } = await client.from("lessons").insert([row]);
     if (!error) inserted++;
   }
-  return { inserted, updated, skipped };
+  return { inserted, updated, dup, noDay, noTitle };
 }
 
 export async function POST(req) {
@@ -275,12 +275,14 @@ export async function POST(req) {
     if (qr) { console.log("RAWDAH_TG qr", qr); result.lessons.forEach((l) => applyQrToLesson(l, qr)); }
   }
   const client = createClient(SUPA_URL, SERVICE, { auth: { persistSession: false } });
-  const { inserted, updated, skipped } = await insertLessons(client, result.lessons);
-  console.log("RAWDAH_TG insert", inserted, updated, skipped);
+  const { inserted, updated, dup, noDay, noTitle } = await insertLessons(client, result.lessons);
+  console.log("RAWDAH_TG insert", inserted, updated, dup, noDay, noTitle);
   const parts = [];
   if (inserted) parts.push(`✅ أُضيف ${inserted} درس`);
   if (updated) parts.push(`🔗 أُكمل ${updated} درس`);
-  if (skipped) parts.push(`↩️ تُجوهل ${skipped}`);
-  await reply(chatId, parts.join(" · ") || "لم يُضف شيء جديد.");
-  return Response.json({ ok: true, inserted, updated, skipped });
+  if (dup) parts.push(`↩️ ${dup} موجود مسبقاً (يظهر في قائمة يومه)`);
+  if (noDay) parts.push(`⚠️ ${noDay} بلا يوم محدّد في الملصق — اذكري اليوم أو أضيفيه من اللوحة`);
+  if (noTitle) parts.push(`⚠️ ${noTitle} بلا عنوان واضح`);
+  await reply(chatId, parts.join("\n") || "لم يُضف شيء جديد.");
+  return Response.json({ ok: true, inserted, updated, dup, noDay, noTitle });
 }
