@@ -33,21 +33,29 @@ export default function Adhkar({ t, lang }) {
         {items.map((d, i) => {
           const src = ar ? d.source : (d.sourceEn || d.source);
           const note = ar ? d.note : (d.noteEn || d.note);
+          const num = (n) => (ar ? String(n).replace(/\d/g, (x) => "٠١٢٣٤٥٦٧٨٩"[x]) : String(n));
           return (
             <div key={i} className="bg-white rounded-2xl border border-pearl-200 p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-sage-700 bg-sage-100 rounded-full px-3 py-1">
-                  {i + 1} / {items.length}
+                <span className="text-xs font-semibold text-slate-400">
+                  {num(i + 1)} <span className="text-pearl-300">/</span> {num(items.length)}
                 </span>
-                {d.count > 1 && <span className="text-xs font-bold text-sage-700">× {d.count}</span>}
+                {d.count > 1 && (
+                  <span
+                    title={ar ? "عدد مرّات التكرار" : "Repeat count"}
+                    className="inline-flex items-center justify-center min-w-12 h-12 px-3 rounded-full bg-pearl-100 border-2 border-sage-500 text-sage-700 text-lg font-extrabold shadow-sm"
+                  >
+                    {num(d.count)}<span className="text-sage-500 text-sm">×</span>
+                  </span>
+                )}
               </div>
 
               {d.prefix && (
-                <p className="text-center text-slate-500 mb-1" style={{ fontFamily: "Amiri, serif" }}>
+                <p className="font-quran text-center text-slate-500 mb-1 text-lg">
                   {d.prefix}
                 </p>
               )}
-              <p dir="rtl" className="text-center text-pine-800 leading-loose text-xl" style={{ fontFamily: "Amiri, serif" }}>
+              <p dir="rtl" className="font-quran text-center text-pine-800 leading-loose text-2xl">
                 {d.ar}
               </p>
               {!ar && d.en && (
