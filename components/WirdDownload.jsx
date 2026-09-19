@@ -105,7 +105,7 @@ export default function WirdDownload({ item, lang, t }) {
       );
       ctx.fillText("muslimummah.app", S / 2, 1002);
 
-      const caption = `${item.ar}\n${item.en}\n${item.source[lang] || item.source.ar || ""}\n\n${t.shareText}\nmuslimummah.app`;
+      const caption = `${item.ar}\n${item.en}\n${item.source[lang] || item.source.ar || ""}\n\n${t.shareText}\nwww.muslimummah.app`;
       await shareCanvas(canvas, "muslim-ummah-wird.png", caption);
     } finally {
       setBusy(false);

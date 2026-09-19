@@ -134,7 +134,7 @@ export default function AdhkarDownload({ d, lang, t }) {
       ctx.font = `400 26px ${TAJAWAL}`;
       ctx.fillText("muslimummah.app", S / 2, 914);
 
-      const caption = `${prefix ? prefix + "\n" : ""}${d.ar}${enText ? "\n" + enText : ""}${src ? "\n" + src : ""}\n\n${t.shareText}\nmuslimummah.app`;
+      const caption = `${prefix ? prefix + "\n" : ""}${d.ar}${enText ? "\n" + enText : ""}${src ? "\n" + src : ""}\n\n${t.shareText}\nwww.muslimummah.app`;
       await shareCanvas(canvas, "muslim-ummah-dhikr.png", caption);
     } finally {
       setBusy(false);
