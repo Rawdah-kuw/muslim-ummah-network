@@ -574,7 +574,9 @@ function Card({ l, showDay, lang = "ar" }) {
               <MapPin size={15} /> الموقع
             </a>
           )}
-          {/* Zoom is the primary way to join for everyone. Women see a conditions warning first. */}
+          {/* Zoom is the primary way to join. When there is no Zoom link, send
+              people to the da‘iyah's own contact to request it — not the lesson
+              channel where the link is hard to find. */}
           {l.zoom_link ? (
             women ? (
               <button type="button" onClick={() => setShowWarn(true)} className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`}>
@@ -585,13 +587,9 @@ function Card({ l, showDay, lang = "ar" }) {
                 <Video size={15} /> انضم عبر زوم
               </a>
             )
-          ) : women && l.channel_link ? (
-            <a className={`${btn} text-cream bg-sage-600 hover:bg-sage-700`} href={l.channel_link} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={15} /> انضمي للقناة
-            </a>
           ) : (
             <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={askLink} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={15} /> اطلب رابط الزوم
+              <MessageCircle size={15} /> تواصل مع الداعية للرابط
             </a>
           )}
           {l.instagram && (
@@ -602,6 +600,11 @@ function Card({ l, showDay, lang = "ar" }) {
           {l.telegram_link && (
             <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={l.telegram_link} target="_blank" rel="noopener noreferrer">
               <Send size={15} /> تيليجرام
+            </a>
+          )}
+          {l.channel_link && (
+            <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={l.channel_link} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={15} /> القناة
             </a>
           )}
           {wa && (

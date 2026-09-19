@@ -159,19 +159,28 @@ async function insertLessons(client, lessons) {
     ensureDate(row);
     const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
     const nt = normalizeText(row.title), nte = normalizeText(row.teacher);
-    // Same lesson as an existing one? Match by title+teacher, or by same teacher
-    // when one side has no title yet (a poster image + its follow-up text).
+    const rl = normalizeText(row.location), rtime = normalizeText(row.time);
+    // Same gathering as an existing one on this day? Match by:
+    //  • same place + same time  (a place can't host two lessons at once), or
+    //  • same teacher + same time (a teacher can't be in two places at once), or
+    //  • same teacher (a poster image + its follow-up text; one side may lack a title), or
+    //  • same title.
     const match = (existing || []).find((ex) => {
       const et = normalizeText(ex.title), ete = normalizeText(ex.teacher);
+      const el = normalizeText(ex.location), etime = normalizeText(ex.time);
+      if (rl && el && rl === el && rtime && etime && rtime === etime && ex.gender === row.gender) return true;
+      if (nte && ete && nte === ete && rtime && etime && rtime === etime) return true;
       if (nte && ete && nte === ete) return (!nt || !et) ? true : nt === et;
-      if (nt && et && nt === et) return true; // same title, teacher missing on a side
+      if (nt && et && nt === et) return true;
       return false;
     });
     if (match) {
-      // Complete the existing card: fill only the fields it is still missing.
+      // Complete the existing card: fill only the fields it is still missing,
+      // and give it a date if it was published without one (an error to fix).
       const upd = {};
       if (!match.title && row.title) upd.title = row.title;
       if (!match.teacher && row.teacher) upd.teacher = row.teacher;
+      if (!match.lesson_date && row.lesson_date) upd.lesson_date = row.lesson_date;
       for (const k of FILL) if (row[k] && !match[k]) upd[k] = row[k];
       const title = upd.title || match.title, teacher = upd.teacher || match.teacher, time = upd.time || match.time;
       if (!match.is_published && title && teacher && time) upd.is_published = true;

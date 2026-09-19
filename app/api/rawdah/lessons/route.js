@@ -292,10 +292,13 @@ export async function POST(req) {
     const nt = normalizeText(row.title);
     const nte = normalizeText(row.teacher);
     // Re-adding the same gathering UPDATES its card instead of duplicating it —
-    // matched by slot (teacher+day+time), or by topic+teacher when time is absent.
+    // matched by teacher-slot (teacher+day+time), place-slot (location+day+time,
+    // since a place can't host two lessons at once), or topic+teacher.
     const sk = slotKey(row);
+    const rl = normalizeText(row.location), rt = parseTime(row.time);
     const match =
       (sk ? (existing || []).find((ex) => slotKey(ex) === sk) : null) ||
+      ((rl && rt !== 9999) ? (existing || []).find((ex) => normalizeText(ex.location) === rl && parseTime(ex.time) === rt && ex.gender === row.gender) : null) ||
       (existing || []).find((ex) => normalizeText(ex.title) === nt && normalizeText(ex.teacher) === nte);
     if (match) {
       const upd = {};
