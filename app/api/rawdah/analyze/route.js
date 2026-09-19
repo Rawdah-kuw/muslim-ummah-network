@@ -1,3 +1,5 @@
+import { decodeQrUrl, applyQrToLesson } from "@/lib/qr";
+
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -95,6 +97,9 @@ export async function POST(req) {
       if (extracted.title || extracted.teacher) extracted = { lessons: [extracted] };
       else return Response.json({ error: "لم يتم استخراج أي دروس" }, { status: 500 });
     }
+    // Decode a QR code in the poster (often the Zoom link) → fill missing links.
+    const qr = await decodeQrUrl(Buffer.from(image.data, "base64"));
+    if (qr && Array.isArray(extracted.lessons)) extracted.lessons.forEach((l) => applyQrToLesson(l, qr));
     return Response.json({ success: true, data: extracted });
   } catch (e) {
     return Response.json({ error: e.message || "error" }, { status: 500 });

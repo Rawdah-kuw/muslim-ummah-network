@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { decodeQrUrl, applyQrToLesson } from "@/lib/qr";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -248,8 +249,9 @@ export async function POST(req) {
   const promptText = PROMPT +
     `\n\nتاريخ اليوم: ${todayKwIso()} (توقيت الكويت). احسبي كل التواريخ بناءً عليه.`;
   let content = null;
+  let img = null;
   if (msg.photo && msg.photo.length) {
-    const img = await downloadPhoto(msg.photo[msg.photo.length - 1].file_id);
+    img = await downloadPhoto(msg.photo[msg.photo.length - 1].file_id);
     console.log("RAWDAH_TG photo-download", !!img);
     if (img) {
       content = [{ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } },
@@ -265,6 +267,12 @@ export async function POST(req) {
   if (result.error) {
     await reply(chatId, result.error === "ليس بوستر درس" ? "لم أتعرّف على درس في هذا المنشور." : "تعذّر تحليل المنشور، حاولي مرة أخرى.");
     return Response.json({ ok: true });
+  }
+  // A poster's QR code often holds the Zoom link the text doesn't spell out —
+  // decode it from the image and fill any lesson that's missing its join link.
+  if (img && Array.isArray(result.lessons)) {
+    const qr = await decodeQrUrl(Buffer.from(img.data, "base64"));
+    if (qr) { console.log("RAWDAH_TG qr", qr); result.lessons.forEach((l) => applyQrToLesson(l, qr)); }
   }
   const client = createClient(SUPA_URL, SERVICE, { auth: { persistSession: false } });
   const { inserted, updated, skipped } = await insertLessons(client, result.lessons);
