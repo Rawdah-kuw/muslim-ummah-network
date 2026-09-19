@@ -29,16 +29,19 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 ▪ channel_link: رابط قناة/قروب واتساب أو تلغرام أو "".
 ▪ zoom_link: رابط زوم كامل يبدأ https:// أو "".
 ▪ zoom_passcode: رمز الزوم أو "".
+▪ telegram_link: رابط تيليجرام كامل (t.me/…) إن وُجد أو "".
 ▪ lesson_date: تاريخ YYYY-MM-DD إن وُجد أو "".
 ▪ is_recurring: true إن كان أسبوعياً متكرراً وإلا false.
 ▪ days: مصفوفة الأيام إن ذكر البوستر عدة أيام لنفس الدرس («الأيام: الأحد • الإثنين • الأربعاء • الخميس») وإلا [].
 ▪ date_from / date_to: إن ذُكر نطاق («ابتداءً من 5 يوليو ولغاية 5 أغسطس 2026») بصيغة YYYY-MM-DD وإلا "".
 مهم: البوستر بعدة أيام ونطاق تواريخ = **درس واحد** مع days وdate_from وdate_to (لا تكرّريه).
 
-أرجعي JSON فقط بلا شرح:
-{"lessons":[{"title":"","teacher":"","gender":"","day":"","days":[],"time":"","area":"","location":"","types":[""],"instagram":"","phone":"","channel_link":"","zoom_link":"","zoom_passcode":"","lesson_date":"","date_from":"","date_to":"","is_recurring":false}]}
+تكملة منشور سابق: قد يكون هذا المنشور تكملةً لبوستر أُرسل قبله (مثلاً نصّ فيه روابط الزوم/تيليجرام/واتساب أو الوقت فقط، لنفس الدرس). في هذه الحالة استخرجي كل ما هو موجود فعلاً ولو كان جزئياً (الداعية/اليوم/الوقت/الروابط/المكان) واتركي الباقي "". لا تخترعي معلومات غير موجودة. الروابط غالباً تكون في النصوص، والأوقات والأماكن غالباً في الصور — لذا كل منشور قد يحمل جزءاً من الدرس. لا تردّي {"error":"ليس بوستر درس"} إلا إذا لم يكن للمنشور علاقة بدرس ديني إطلاقاً؛ أما إذا كان فيه ولو داعية أو يوم أو رابط لدرس، فاستخرجيه.
 
-إن لم يكن بوستر درس ديني → أرجعي {"error":"ليس بوستر درس"}.`;
+أرجعي JSON فقط بلا شرح:
+{"lessons":[{"title":"","teacher":"","gender":"","day":"","days":[],"time":"","area":"","location":"","types":[""],"instagram":"","phone":"","channel_link":"","zoom_link":"","zoom_passcode":"","telegram_link":"","lesson_date":"","date_from":"","date_to":"","is_recurring":false}]}
+
+إن لم يكن للمنشور علاقة بدرس ديني إطلاقاً → أرجعي {"error":"ليس بوستر درس"}.`;
 
 const HONORIFICS = ["د", "ا", "الدكتور", "الدكتوره", "دكتور", "دكتوره", "الشيخ", "الشيخه",
   "شيخ", "شيخه", "الاستاذ", "الاستاذه", "استاذ", "استاذه", "الاخت", "الواعظه", "الداعيه",
@@ -138,31 +141,53 @@ async function callClaude(content) {
   } catch { return { error: "parse-failed" }; }
 }
 
+// Fields that a follow-up post can COMPLETE on an existing lesson (a poster image
+// carries the time/place; a text message carries the links — they complete each other).
+const FILL = ["time", "area", "location", "instagram", "phone",
+  "channel_link", "zoom_link", "zoom_passcode", "telegram_link"];
+
 async function insertLessons(client, lessons) {
   const COLS = ["title", "teacher", "gender", "day", "time", "area", "location", "types",
-    "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "lesson_date",
-    "is_recurring", "is_paused", "is_published"];
-  let inserted = 0, skipped = 0;
+    "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "telegram_link",
+    "lesson_date", "is_recurring", "is_paused", "is_published"];
+  let inserted = 0, updated = 0, skipped = 0;
   for (const raw of lessons.flatMap(expandRange)) {
     const row = {};
     for (const k of COLS) if (raw[k] !== undefined) row[k] = raw[k];
-    if (!row.title || !row.day) continue;
+    if (!row.day) { skipped++; continue; } // need a day to place or merge the post
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
-    row.is_published = !!(row.title && row.teacher && row.time); // auto-publish complete
     ensureDate(row);
-    const { data: existing } = await client.from("lessons")
-      .select("id, title, teacher, lesson_date, is_recurring").eq("day", row.day);
+    const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
     const nt = normalizeText(row.title), nte = normalizeText(row.teacher);
-    const dup = (existing || []).some((ex) => {
-      if (normalizeText(ex.title) !== nt || normalizeText(ex.teacher) !== nte) return false;
-      if (ex.is_recurring) return true;
-      return (ex.lesson_date || null) === (row.lesson_date || null) || !row.lesson_date;
+    // Same lesson as an existing one? Match by title+teacher, or by same teacher
+    // when one side has no title yet (a poster image + its follow-up text).
+    const match = (existing || []).find((ex) => {
+      const et = normalizeText(ex.title), ete = normalizeText(ex.teacher);
+      if (nte && ete && nte === ete) return (!nt || !et) ? true : nt === et;
+      if (nt && et && nt === et) return true; // same title, teacher missing on a side
+      return false;
     });
-    if (dup) { skipped++; continue; }
+    if (match) {
+      // Complete the existing card: fill only the fields it is still missing.
+      const upd = {};
+      if (!match.title && row.title) upd.title = row.title;
+      if (!match.teacher && row.teacher) upd.teacher = row.teacher;
+      for (const k of FILL) if (row[k] && !match[k]) upd[k] = row[k];
+      const title = upd.title || match.title, teacher = upd.teacher || match.teacher, time = upd.time || match.time;
+      if (!match.is_published && title && teacher && time) upd.is_published = true;
+      if (Object.keys(upd).length) {
+        upd.updated_at = new Date().toISOString();
+        await client.from("lessons").update(upd).eq("id", match.id);
+        updated++;
+      } else skipped++;
+      continue;
+    }
+    if (!row.title) { skipped++; continue; } // a partial post with nothing to attach to
+    row.is_published = !!(row.title && row.teacher && row.time); // auto-publish complete
     const { error } = await client.from("lessons").insert([row]);
     if (!error) inserted++;
   }
-  return { inserted, skipped };
+  return { inserted, updated, skipped };
 }
 
 export async function POST(req) {
@@ -216,11 +241,12 @@ export async function POST(req) {
     return Response.json({ ok: true });
   }
   const client = createClient(SUPA_URL, SERVICE, { auth: { persistSession: false } });
-  const { inserted, skipped } = await insertLessons(client, result.lessons);
-  console.log("RAWDAH_TG insert", inserted, skipped);
+  const { inserted, updated, skipped } = await insertLessons(client, result.lessons);
+  console.log("RAWDAH_TG insert", inserted, updated, skipped);
   const parts = [];
   if (inserted) parts.push(`✅ أُضيف ${inserted} درس`);
-  if (skipped) parts.push(`↩️ تُجوهل ${skipped} مكرّر`);
-  await reply(chatId, parts.join(" · ") || "لم يُضف شيء (ربما مكرر).");
-  return Response.json({ ok: true, inserted, skipped });
+  if (updated) parts.push(`🔗 أُكمل ${updated} درس`);
+  if (skipped) parts.push(`↩️ تُجوهل ${skipped}`);
+  await reply(chatId, parts.join(" · ") || "لم يُضف شيء جديد.");
+  return Response.json({ ok: true, inserted, updated, skipped });
 }
