@@ -94,6 +94,7 @@ function Fields({ value, onChange }) {
       <div><label className={lbl}>رابط القناة/القروب (للنساء)</label><input className={inp} value={value.channel_link || ""} onChange={(e) => set("channel_link", e.target.value)} /></div>
       <div><label className={lbl}>رابط زوم (للرجال)</label><input className={inp} value={value.zoom_link || ""} onChange={(e) => set("zoom_link", e.target.value)} /></div>
       <div><label className={lbl}>رمز الزوم</label><input className={inp} value={value.zoom_passcode || ""} onChange={(e) => set("zoom_passcode", e.target.value)} /></div>
+      <div><label className={lbl}>رابط تيليجرام (لطلب الرابط عند غياب الزوم)</label><input className={inp} value={value.telegram_link || ""} onChange={(e) => set("telegram_link", e.target.value)} placeholder="https://t.me/..." /></div>
       <div><label className={lbl}>التاريخ</label><input type="date" className={inp} value={value.lesson_date || ""} onChange={(e) => set("lesson_date", e.target.value)} /></div>
       <div className="sm:col-span-2 bg-pearl-100 rounded-lg p-3 text-xs text-sage-700 leading-relaxed">
         📅 كل درس يظهر حتى تاريخه ثم يُزال تلقائيًا. لعرضه في أسبوع آخر أضيفيه من جديد بالتاريخ الجديد — وإضافة الدرس نفسه مرّة ثانية تُحدّثه ولا تُكرّره.

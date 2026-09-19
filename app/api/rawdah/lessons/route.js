@@ -6,8 +6,18 @@ const SUPA_URL = process.env.SUPABASE_URL || "https://buvsgjiqtaftyexjvyzw.supab
 const SERVICE = process.env.SUPABASE_SERVICE_KEY;
 
 const COLS = ["title", "teacher", "gender", "day", "time", "area", "location", "types",
-  "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "lesson_date",
-  "is_recurring", "is_paused", "is_published"];
+  "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "telegram_link",
+  "lesson_date", "is_recurring", "is_paused", "is_published"];
+
+// telegram_link is a newly-added column. Probe once (cached) so writes never fail
+// if the owner hasn't run the ALTER TABLE yet — the field is simply dropped until then.
+let _tgCol = null;
+async function telegramSupported(client) {
+  if (_tgCol !== null) return _tgCol;
+  const { error } = await client.from("lessons").select("telegram_link").limit(1);
+  _tgCol = !error;
+  return _tgCol;
+}
 
 const DAYS_AR = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
@@ -203,7 +213,7 @@ function slotKey(l) {
   if (!l.teacher || !l.day || tt === 9999) return null;
   return `${normalizeText(l.teacher)}|${l.day}|${tt}`;
 }
-const MERGE_RICH = ["area", "location", "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "gender"];
+const MERGE_RICH = ["area", "location", "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "telegram_link", "gender"];
 // Collapse every group of lessons sharing a slot (teacher+day+time) into ONE
 // card: keep one (recurring/published/fullest), set its topic to the most
 // recent week's, copy over any missing details, then delete the rest.
@@ -267,6 +277,8 @@ export async function POST(req) {
   const raw = Array.isArray(body.lessons) ? body.lessons : [body];
   const incoming = raw.flatMap(expandRange).map(pick).filter((r) => r.title && r.day);
   if (!incoming.length) return Response.json({ error: "no-valid-rows" }, { status: 400 });
+  const tgOk = await telegramSupported(client);
+  if (!tgOk) for (const r of incoming) delete r.telegram_link;
 
   const insertedRows = [];
   let skipped = 0, updated = 0;
@@ -310,6 +322,7 @@ export async function PATCH(req) {
   const body = await req.json().catch(() => ({}));
   if (!body.id) return Response.json({ error: "no-id" }, { status: 400 });
   const fields = pick(body);
+  if (fields.telegram_link !== undefined && !(await telegramSupported(db()))) delete fields.telegram_link;
   // Keep date consistent with the weekday (only when day is part of this update).
   if (fields.day !== undefined) ensureDate(fields);
   fields.updated_at = new Date().toISOString();

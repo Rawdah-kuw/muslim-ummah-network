@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Sprout, MapPin, Video, MessageCircle, Instagram, Clock, Building2, Share2 } from "lucide-react";
+import { Sprout, MapPin, Video, MessageCircle, Instagram, Clock, Building2, Share2, Send } from "lucide-react";
 import SectionHead from "./SectionHead";
 
 // Public (publishable) Supabase credentials — safe to expose; RLS allows reading published lessons only.
@@ -525,6 +525,8 @@ function Card({ l, showDay, lang = "ar" }) {
   const askMsg = `السلام عليكم، أرجو تزويدي برابط زوم لدرس «${l.title || "الدرس"}»${l.day ? ` (${l.day}${l.time ? " " + l.time : ""})` : ""}. جزاكم الله خيرًا.`;
   const askLink = l.phone
     ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}?text=${encodeURIComponent(askMsg)}`
+    : l.telegram_link
+    ? l.telegram_link
     : l.instagram
     ? `https://instagram.com/${l.instagram}`
     : l.channel_link || GROUP_LINK;
@@ -595,6 +597,11 @@ function Card({ l, showDay, lang = "ar" }) {
           {l.instagram && (
             <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={`https://instagram.com/${l.instagram}`} target="_blank" rel="noopener noreferrer">
               <Instagram size={15} /> @{l.instagram}
+            </a>
+          )}
+          {l.telegram_link && (
+            <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={l.telegram_link} target="_blank" rel="noopener noreferrer">
+              <Send size={15} /> تيليجرام
             </a>
           )}
           {wa && (
