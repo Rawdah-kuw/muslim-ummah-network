@@ -170,6 +170,8 @@ async function insertLessons(client, lessons) {
     //  • same teacher (a poster image + its follow-up text; one side may lack a title), or
     //  • same title.
     const match = (existing || []).find((ex) => {
+      // Same date (or one side dateless) — never merge different dates of a series.
+      if (ex.lesson_date && row.lesson_date && ex.lesson_date !== row.lesson_date) return false;
       const et = normalizeText(ex.title), ete = normalizeText(ex.teacher);
       const el = normalizeText(ex.location), etime = normalizeText(ex.time);
       if (rl && el && rl === el && rtime && etime && rtime === etime && ex.gender === row.gender) return true;

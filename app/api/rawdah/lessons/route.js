@@ -223,7 +223,10 @@ async function dedupBySlot(client) {
   for (const l of rows || []) {
     const k = slotKey(l);
     if (!k) continue;
-    (groups[k] = groups[k] || []).push(l);
+    // Group by slot AND date, so different sessions of a series (same weekday+time,
+    // different dates) are NOT merged — only true same-date duplicates are.
+    const gk = `${k}|${l.lesson_date || ""}`;
+    (groups[gk] = groups[gk] || []).push(l);
   }
   let merged = 0;
   for (const g of Object.values(groups)) {
@@ -296,10 +299,15 @@ export async function POST(req) {
     // since a place can't host two lessons at once), or topic+teacher.
     const sk = slotKey(row);
     const rl = normalizeText(row.location), rt = parseTime(row.time);
-    const match =
-      (sk ? (existing || []).find((ex) => slotKey(ex) === sk) : null) ||
-      ((rl && rt !== 9999) ? (existing || []).find((ex) => normalizeText(ex.location) === rl && parseTime(ex.time) === rt && ex.gender === row.gender) : null) ||
-      (existing || []).find((ex) => normalizeText(ex.title) === nt && normalizeText(ex.teacher) === nte);
+    // Same DATE (or one side dateless) is required — otherwise different sessions
+    // of a series (same teacher/place, same weekday+time, different dates) merge wrongly.
+    const sameDate = (ex) => !ex.lesson_date || !row.lesson_date || ex.lesson_date === row.lesson_date;
+    const match = (existing || []).find((ex) => {
+      if (!sameDate(ex)) return false;
+      if (sk && slotKey(ex) === sk) return true;
+      if (rl && rt !== 9999 && normalizeText(ex.location) === rl && parseTime(ex.time) === rt && ex.gender === row.gender) return true;
+      return normalizeText(ex.title) === nt && normalizeText(ex.teacher) === nte;
+    });
     if (match) {
       const upd = {};
       if (row.title && nt !== normalizeText(match.title)) upd.title = row.title;

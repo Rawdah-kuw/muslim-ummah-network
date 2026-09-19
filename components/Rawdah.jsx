@@ -387,15 +387,16 @@ export default function Rawdah({ lang = "ar" }) {
         if (error) throw error;
         // Remove duplicate rows (same lesson entered 2–3 times) — keep first.
         const seen = new Set();
-        const horizon = new Date();
-        horizon.setDate(horizon.getDate() + 7); // show only the coming week
         const todayKw = new Date(Date.now() + 3 * 3600 * 1000).toISOString().split("T")[0]; // Kuwait date
+        // Show ONE week only: today + the next 6 days = each weekday once. (Using +7
+        // included next week's same weekday too, so the schedule looked like two weeks.)
+        const horizonKw = new Date(Date.now() + 3 * 3600 * 1000 + 6 * 86400 * 1000).toISOString().split("T")[0];
         const rows = (data || []).filter((l) => {
           if (l.is_paused) return false; // hide temporarily-paused recurring lessons
           // Hide ended lessons (dated, non-recurring, already passed) — don't rely on DB cleanup.
           if (!l.is_recurring && l.lesson_date && l.lesson_date < todayKw) return false;
-          // Hide dated lessons more than a week away — they appear a week before.
-          if (!l.is_recurring && l.lesson_date && new Date(`${l.lesson_date}T00:00:00`) > horizon) return false;
+          // Hide dated lessons beyond this week — they appear a week before.
+          if (!l.is_recurring && l.lesson_date && l.lesson_date > horizonKw) return false;
           // Normalized key (title+teacher+day) collapses spelling/format variants.
           const key = `${normalizeText(l.title)}|${normalizeText(l.teacher)}|${l.day}`;
           if (seen.has(key)) return false;
