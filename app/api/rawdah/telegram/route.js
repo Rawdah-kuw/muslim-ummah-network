@@ -84,11 +84,12 @@ function expandRange(row) {
     : (row.day ? [row.day] : []);
   let from = row.date_from;
   let to = row.date_to;
-  // Daily / several-days-a-week with no explicit range → ongoing: cover the next
-  // 6 weeks from today so it shows on each of its days (no recurrence flag needed).
+  // Multi-day with no explicit range: only a DAILY lesson (all 7 weekdays, i.e.
+  // «يومياً») repeats across weeks (next 6 weeks); any other several-days lesson
+  // just fills the coming week so each of its days shows once — no week-repeat.
   if (days.length >= 2 && (!from || !to)) {
     from = from || todayKwIso();
-    to = to || addDaysIso(from, 42);
+    to = to || addDaysIso(from, days.length >= 7 ? 42 : 6);
   } else if (to && !from) {
     from = todayKwIso(); // bounded series with only an end date
   }
