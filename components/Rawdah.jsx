@@ -519,6 +519,15 @@ function Card({ l, showDay, lang = "ar" }) {
   const women = genderOf(l) === "نساء";
   const maps = l.location ? `https://maps.google.com/?q=${encodeURIComponent((l.location || "") + " " + (l.area || ""))}` : null;
   const wa = l.phone ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}` : null;
+  // When no Zoom link is set, send people straight to the organizer (da‘iyah /
+  // sponsor) to request it — a ready WhatsApp message — instead of a channel
+  // where the link is hard to find. Falls back to Instagram, then the group.
+  const askMsg = `السلام عليكم، أرجو تزويدي برابط زوم لدرس «${l.title || "الدرس"}»${l.day ? ` (${l.day}${l.time ? " " + l.time : ""})` : ""}. جزاكم الله خيرًا.`;
+  const askLink = l.phone
+    ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}?text=${encodeURIComponent(askMsg)}`
+    : l.instagram
+    ? `https://instagram.com/${l.instagram}`
+    : l.channel_link || GROUP_LINK;
   // A dated, non-recurring lesson whose date has passed is "ended" (greyed out).
   // Ended = a dated, non-recurring lesson whose day has already passed (Kuwait date).
   const todayKw = new Date(Date.now() + 3 * 3600 * 1000).toISOString().split("T")[0];
@@ -579,8 +588,8 @@ function Card({ l, showDay, lang = "ar" }) {
               <MessageCircle size={15} /> انضمي للقناة
             </a>
           ) : (
-            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={GROUP_LINK} target="_blank" rel="noopener noreferrer">
-              <Video size={15} /> لرابط الزوم
+            <a className={`${btn} text-cream`} style={{ background: "#5a7a8a" }} href={askLink} target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={15} /> اطلب رابط الزوم
             </a>
           )}
           {l.instagram && (
