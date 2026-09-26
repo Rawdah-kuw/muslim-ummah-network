@@ -27,9 +27,6 @@ function DhikrCard({ d, i, total, lang, t }) {
     });
   };
 
-  // Arabic-Indic only for the position label; the repeat counter stays Western.
-  const pos = (n) => (ar ? String(n).replace(/\d/g, (x) => "٠١٢٣٤٥٦٧٨٩"[x]) : String(n));
-
   return (
     <div
       onClick={countable ? tap : undefined}
@@ -38,8 +35,8 @@ function DhikrCard({ d, i, total, lang, t }) {
       } ${countable ? "cursor-pointer select-none active:bg-pearl-50" : ""}`}
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-slate-400">
-          {pos(i + 1)} <span className="text-pearl-300">/</span> {pos(total)}
+        <span className="text-xs font-semibold text-slate-400" dir="ltr">
+          {i + 1} <span className="text-pearl-300">/</span> {total}
         </span>
         {countable && (
           <span
