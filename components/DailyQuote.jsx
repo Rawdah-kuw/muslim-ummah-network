@@ -9,10 +9,9 @@ import { QUOTES } from "@/lib/quotes";
 // quotes that have an English text (verbatim excerpts), never Arabic-only
 // adapted summaries.
 export default function DailyQuote({ t, lang }) {
-  const list = useMemo(
-    () => (lang === "ar" ? QUOTES : QUOTES.filter((q) => q.en)),
-    [lang]
-  );
+  // Use bilingual quotes for BOTH languages so the daily quote (and "another
+  // quote") is the SAME item in Arabic and English — its two translations.
+  const list = useMemo(() => QUOTES.filter((q) => q.en), []);
   const start = useMemo(() => {
     const now = new Date();
     const s = new Date(now.getFullYear(), 0, 0);
