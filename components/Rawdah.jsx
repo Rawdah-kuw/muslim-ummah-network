@@ -327,12 +327,14 @@ function drawScheduleHeader(x, day, dateObj, S) {
     sub = `${g} · ${h}`;
   } catch { /* ignore */ }
   if (sub) { x.fillStyle = "#c9dcd0"; x.font = "500 30px Tajawal, sans-serif"; x.fillText(sub, S / 2, 158); }
-  // Hadith of Rawdah («the gardens of Paradise») on the cream band below.
+  // «The Prophet ﷺ said» (attribution on top only) + the hadith of Rawdah.
+  x.fillStyle = "#6f8d7f"; x.font = "600 26px Tajawal, sans-serif";
+  x.fillText("قال رسول الله ﷺ:", S / 2, 230);
   x.fillStyle = "#1B3B2B"; x.font = "700 33px Amiri, serif";
-  x.fillText("«إذا مَرَرْتُم برياضِ الجنةِ فارْتَعُوا»", S / 2, 252);
+  x.fillText("«إذا مَرَرْتُم برياضِ الجنةِ فارْتَعُوا»", S / 2, 278);
   x.fillStyle = "#6f8d7f"; x.font = "500 24px Tajawal, sans-serif";
-  x.fillText("قيل: وما رياضُ الجنة؟ قال: «حِلَقُ الذِّكْر» — رواه الترمذي", S / 2, 294);
-  x.strokeStyle = "#e4dbd3"; x.lineWidth = 2; x.beginPath(); x.moveTo(150, 326); x.lineTo(S - 150, 326); x.stroke();
+  x.fillText("قيل: وما رياضُ الجنة؟ قال: «حِلَقُ الذِّكْر» — رواه الترمذي", S / 2, 318);
+  x.strokeStyle = "#e4dbd3"; x.lineWidth = 2; x.beginPath(); x.moveTo(150, 348); x.lineTo(S - 150, 348); x.stroke();
 }
 function drawScheduleFooter(x, S, page, total) {
   const H = 1920;
@@ -343,7 +345,7 @@ function drawScheduleFooter(x, S, page, total) {
 }
 async function shareScheduleImage(day, list) {
   try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch { /* ignore */ }
-  const S = 1080, H = 1920, START = 356, MAXY = H - 170;
+  const S = 1080, H = 1920, START = 376, MAXY = H - 170;
   const dateObj = scheduleDate(day, list);
   const m = document.createElement("canvas").getContext("2d");
   const pages = []; let cur = []; let y = START;
