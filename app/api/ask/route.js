@@ -79,7 +79,7 @@ export async function POST(req) {
   const prompt = `${instruction}\n\n${lang === "ar" ? "المقاطع" : "Passages"}:\n${passages}\n\n${lang === "ar" ? "السؤال" : "Question"}: ${q}`;
 
   // gemini-2.0-flash was shut down 2026-06-01; use a current flash model.
-  const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
   const sources = top.map((x) => ({ title: titleOf(x.c.book, lang), page: x.c.page, slug: x.c.book }));
   try {
     const r = await fetch(
