@@ -78,9 +78,12 @@ export async function POST(req) {
 
   const prompt = `${instruction}\n\n${lang === "ar" ? "المقاطع" : "Passages"}:\n${passages}\n\n${lang === "ar" ? "السؤال" : "Question"}: ${q}`;
 
+  // gemini-2.0-flash was shut down 2026-06-01; use a current flash model.
+  const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const sources = top.map((x) => ({ title: titleOf(x.c.book, lang), page: x.c.page, slug: x.c.book }));
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,9 +92,12 @@ export async function POST(req) {
     );
     const data = await r.json();
     const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const sources = top.map((x) => ({ title: titleOf(x.c.book, lang), page: x.c.page, slug: x.c.book }));
-    return Response.json({ answer, sources });
-  } catch {
-    return Response.json({ error: "ai" }, { status: 500 });
+    // Temporary diagnostic: when no answer, surface why (removed after fixing).
+    const dbg = answer
+      ? undefined
+      : { model: MODEL, status: r.status, err: data?.error?.message || null, finish: data?.candidates?.[0]?.finishReason || null };
+    return Response.json(dbg ? { answer, sources, _debug: dbg } : { answer, sources });
+  } catch (e) {
+    return Response.json({ error: "ai", _debug: String(e) }, { status: 500 });
   }
 }
