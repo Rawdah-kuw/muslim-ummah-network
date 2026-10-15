@@ -280,7 +280,7 @@ export async function GET(req) {
   if (!SERVICE) return Response.json({ error: "no-service-key" }, { status: 500 });
   const client = db();
   let cleaned = 0;
-  try { cleaned = await cleanupOld(client); await healDates(client); await dedupDb(client); await fillGender(client); } catch { /* ignore */ }
+  try { cleaned = await cleanupOld(client); await healDates(client); await dedupDb(client); await dedupBySlot(client); await fillGender(client); } catch { /* ignore */ }
   const { data, error } = await client.from("lessons").select("*").order("created_at", { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ lessons: data, cleaned });
@@ -306,9 +306,10 @@ export async function POST(req) {
   let skipped = 0, updated = 0;
   for (const row of incoming) {
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
-    // Recurrence is disabled: every lesson is a dated one-time entry (auto-removed
-    // after its date). This is what stops the same lesson piling up week after week.
-    row.is_recurring = false;
+    // Recurrence: only an open-ended weekly lesson («كل أربعاء») stays recurring —
+    // it has no date, shows every week, and is never auto-removed. Anything with a
+    // specific date (including rows expanded from a dated series) is one-time.
+    row.is_recurring = !!row.is_recurring && !row.lesson_date;
     ensureDate(row);
     const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
     const nt = normalizeText(row.title);
@@ -343,6 +344,9 @@ export async function POST(req) {
     if (error) return Response.json({ error: error.message }, { status: 500 });
     insertedRows.push(data[0]);
   }
+  // Merge any same-slot/same-date duplicates created during this batch so the
+  // same lesson never shows twice for the same day.
+  try { await dedupBySlot(client); } catch { /* ignore */ }
   return Response.json({ lessons: insertedRows, inserted: insertedRows.length, updated, skipped });
 }
 

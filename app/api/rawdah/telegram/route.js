@@ -14,7 +14,7 @@ const PROMPT = `أنتِ خبيرة متخصصة في تحليل بوسترات 
 
 اقرئي كل النصوص (العناوين، الزوايا، الأسفل، بجانب الأيقونات، الوسوم الملوّنة).
 
-حدّدي عدد الدروس: درس واحد → عنصر واحد؛ جدول فيه عدة دروس/معلمين → عنصر لكل درس. لا تستخدمي التكرار (is_recurring) أبداً. أما السلسلة الواحدة بأيام محددة ومدى («كل اثنين وثلاثاء حتى ١٠ أكتوبر»، أو «من ٥ إلى ٢٠ أكتوبر») فاجعليها **عنصراً واحداً** مع days (كل الأيام) وdate_from وdate_to، والنظام يولّد تلقائياً درساً مؤرّخاً لكل يوم في المدى — فاحسبي التواريخ صحيحةً بناءً على تاريخ اليوم المذكور أدناه.
+حدّدي عدد الدروس: درس واحد → عنصر واحد؛ جدول فيه عدة دروس/معلمين → عنصر لكل درس. اجعلي is_recurring=true فقط للدرس الأسبوعي المفتوح الذي يقول «كل [يوم]» أو «أسبوعياً» بلا تاريخ نهاية (يتكرّر كل أسبوع، واترك lesson_date و date_from و date_to فارغة)؛ وإلا is_recurring=false. أما السلسلة الواحدة بأيام محددة ومدى («كل اثنين وثلاثاء حتى ١٠ أكتوبر»، أو «من ٥ إلى ٢٠ أكتوبر») فاجعليها **عنصراً واحداً** مع days (كل الأيام) وdate_from وdate_to، والنظام يولّد تلقائياً درساً مؤرّخاً لكل يوم في المدى — فاحسبي التواريخ صحيحةً بناءً على تاريخ اليوم المذكور أدناه.
 
 الحقول لكل درس:
 ▪ title: عنوان الدرس بدون اسم الداعية. وفي الدروس اليومية أو السلاسل المستمرة اكتبي اسم السلسلة أو الكتاب العام فقط (مثل «شرح تفسير السعدي») دون تحديد جزء اليوم (السورة/الصفحة/رقم الحديث) لأنه يتغيّر أسبوعياً.
@@ -172,16 +172,16 @@ async function insertLessons(client, lessons) {
   const COLS = ["title", "teacher", "gender", "day", "time", "area", "location", "types",
     "instagram", "phone", "channel_link", "zoom_link", "zoom_passcode", "telegram_link",
     "lesson_date", "is_recurring", "is_paused", "is_published"];
-  let inserted = 0, updated = 0, dup = 0, noDay = 0, noTitle = 0;
+  let inserted = 0, updated = 0, dup = 0, noDay = 0, noTitle = 0, recurring = 0;
   for (const raw of lessons.flatMap(expandRange)) {
     const row = {};
     for (const k of COLS) if (raw[k] !== undefined) row[k] = raw[k];
     if (!row.day) { noDay++; continue; } // no weekday → can't place it on the schedule
     if (!row.gender) row.gender = inferGender(row.teacher, row.title) || "نساء";
-    // Recurrence is disabled everywhere now: every lesson is a dated one-time
-    // entry (auto-removed after its date). Without this, Telegram uploads kept
-    // creating dateless "recurring" rows that never expire.
-    row.is_recurring = false;
+    // Only an open-ended weekly lesson («كل أربعاء») stays recurring — no date,
+    // shows every week, never auto-removed. Anything with a specific date (incl.
+    // rows expanded from a dated series) is a one-time entry.
+    row.is_recurring = !!row.is_recurring && !row.lesson_date;
     ensureDate(row);
     const { data: existing } = await client.from("lessons").select("*").eq("day", row.day);
     const nt = normalizeText(row.title), nte = normalizeText(row.teacher);
@@ -222,9 +222,9 @@ async function insertLessons(client, lessons) {
     if (!row.title) { noTitle++; continue; } // a partial post with nothing to attach to
     row.is_published = !!(row.title && row.teacher && row.time); // auto-publish complete
     const { error } = await client.from("lessons").insert([row]);
-    if (!error) inserted++;
+    if (!error) { inserted++; if (row.is_recurring) recurring++; }
   }
-  return { inserted, updated, dup, noDay, noTitle };
+  return { inserted, updated, dup, noDay, noTitle, recurring };
 }
 
 export async function POST(req) {
@@ -287,10 +287,10 @@ export async function POST(req) {
     if (qr) { console.log("RAWDAH_TG qr", qr); result.lessons.forEach((l) => applyQrToLesson(l, qr)); }
   }
   const client = createClient(SUPA_URL, SERVICE, { auth: { persistSession: false } });
-  const { inserted, updated, dup, noDay, noTitle } = await insertLessons(client, result.lessons);
-  console.log("RAWDAH_TG insert", inserted, updated, dup, noDay, noTitle);
+  const { inserted, updated, dup, noDay, noTitle, recurring } = await insertLessons(client, result.lessons);
+  console.log("RAWDAH_TG insert", inserted, updated, dup, noDay, noTitle, recurring);
   const parts = [];
-  if (inserted) parts.push(`✅ أُضيف ${inserted} درس`);
+  if (inserted) parts.push(`✅ أُضيف ${inserted} درس${recurring ? ` (منها ${recurring} أسبوعي يتكرّر كل أسبوع)` : ""}`);
   if (updated) parts.push(`🔗 أُكمل ${updated} درس`);
   if (dup) parts.push(`↩️ ${dup} موجود مسبقاً (يظهر في قائمة يومه)`);
   if (noDay) parts.push(`⚠️ ${noDay} بلا يوم محدّد في الملصق — اذكري اليوم أو أضيفيه من اللوحة`);
