@@ -257,15 +257,16 @@ function fit(x, text, maxW) {
   while (t.length > 1 && x.measureText(`${t}…`).width > maxW) t = t.slice(0, -1);
   return `${t}…`;
 }
+// Two-column card: title+teacher on the right, badges + time/place + contact on
+// the left — so cards are shorter and more lessons fit per image.
 function rowHeight(x, l, S) {
   x.font = "700 34px Amiri, serif";
   const cardW = S - 120;
-  const titleLines = Math.min(2, wrapLines(x, l.title || "", cardW - 88).length || 1);
-  let h = 48 + titleLines * 40;
-  if (l.teacher) h += 34;
-  if (l.time || l.area || l.location) h += 32; // time · area · location on one line
-  if (l.instagram || l.phone) h += 28;
-  return h + 30;
+  const rightMaxW = Math.round(cardW * 0.55);
+  const titleLines = Math.min(2, wrapLines(x, l.title || "", rightMaxW).length || 1);
+  const rightH = titleLines * 40 + (l.teacher ? 32 : 0);
+  const leftH = 34 + ((l.time || l.area || l.location) ? 30 : 0) + ((l.instagram || l.phone) ? 28 : 0);
+  return 40 + Math.max(rightH, leftH) + 24;
 }
 function drawScheduleRow(x, l, top, S) {
   const women = genderOf(l) === "نساء";
@@ -273,11 +274,12 @@ function drawScheduleRow(x, l, top, S) {
   const tint = women ? "#fbf1f3" : "#eef4fa";
   const cardX = 60, cardW = S - 120;
   const slot = rowHeight(x, l, S) - 16;
-  const xR = cardX + cardW - 34, xL = cardX + 34, maxW = cardW - 88;
-  x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 24); x.fill();
-  x.fillStyle = accent; roundRectPath(x, cardX + cardW - 12, top + 14, 7, slot - 28, 4); x.fill();
+  const rightMaxW = Math.round(cardW * 0.55), leftMaxW = Math.round(cardW * 0.40);
+  const xR = cardX + cardW - 34, xL = cardX + 34;
+  x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 22); x.fill();
+  x.fillStyle = accent; roundRectPath(x, cardX + cardW - 12, top + 12, 7, slot - 24, 4); x.fill();
   x.direction = "rtl";
-  // badges: gender first, then type(s) (top-left)
+  // LEFT column: badges (gender + types) on top, then time·area·location, then contact
   let px = xL;
   const badges = [{ t: women ? "للنساء" : "للجميع", bg: accent, fg: "#ffffff" }];
   for (const tp of (Array.isArray(l.types) ? l.types : [])) {
@@ -285,23 +287,25 @@ function drawScheduleRow(x, l, top, S) {
     badges.push({ t: tp, bg: online ? "#dbe7f0" : "#e2ece7", fg: online ? "#3f5f70" : "#3e5a4e" });
   }
   for (const b of badges) {
-    x.font = "700 22px Tajawal, sans-serif";
-    const w = x.measureText(b.t).width + 28;
-    x.fillStyle = b.bg; roundRectPath(x, px, top + 16, w, 34, 17); x.fill();
-    x.fillStyle = b.fg; x.textAlign = "center"; x.fillText(b.t, px + w / 2, top + 39);
-    px += w + 10;
+    x.font = "700 21px Tajawal, sans-serif";
+    const w = x.measureText(b.t).width + 26;
+    x.fillStyle = b.bg; roundRectPath(x, px, top + 16, w, 32, 16); x.fill();
+    x.fillStyle = b.fg; x.textAlign = "center"; x.fillText(b.t, px + w / 2, top + 38);
+    px += w + 8;
   }
-  // title + teacher + info (right-aligned, truncated to fit)
+  x.textAlign = "left";
+  let ly = top + 72;
+  const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
+  if (info) { x.fillStyle = "#475569"; x.font = "400 25px Tajawal, sans-serif"; x.fillText(fit(x, info, leftMaxW), xL, ly); ly += 30; }
+  const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join(" · ");
+  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 23px Tajawal, sans-serif"; x.fillText(fit(x, contact, leftMaxW), xL, ly); }
+  // RIGHT column: title (up to 2 lines) + teacher
   x.textAlign = "right";
   x.fillStyle = "#1B3B2B"; x.font = "700 34px Amiri, serif";
-  const lines = wrapLines(x, l.title || "", maxW).slice(0, 2);
-  let y = top + 52;
-  for (const ln of lines) { x.fillText(ln, xR, y + 32); y += 40; }
-  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 27px Tajawal, sans-serif"; x.fillText(fit(x, `مع ${l.teacher}`, maxW), xR, y + 26); y += 34; }
-  const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
-  if (info) { x.fillStyle = "#475569"; x.font = "400 26px Tajawal, sans-serif"; x.fillText(fit(x, info, maxW), xR, y + 22); y += 32; }
-  const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join("  ·  ");
-  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 24px Tajawal, sans-serif"; x.fillText(fit(x, contact, maxW), xR, y + 20); }
+  const lines = wrapLines(x, l.title || "", rightMaxW).slice(0, 2);
+  let ry = top + 40;
+  for (const ln of lines) { x.fillText(ln, xR, ry + 32); ry += 40; }
+  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 26px Tajawal, sans-serif"; x.fillText(fit(x, `مع ${l.teacher}`, rightMaxW), xR, ry + 26); }
 }
 function scheduleDate(day, list) {
   const dated = (list || []).find((l) => l.lesson_date && l.day === day && !l.is_recurring);
