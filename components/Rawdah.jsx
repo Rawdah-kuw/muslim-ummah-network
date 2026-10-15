@@ -258,25 +258,24 @@ function fit(x, text, maxW) {
   return `${t}…`;
 }
 function rowHeight(x, l, S) {
-  x.font = "700 40px Amiri, serif";
-  const cardW = S - 140;
-  const titleLines = Math.min(2, wrapLines(x, l.title || "", cardW - 100).length || 1);
-  let h = 84 + titleLines * 50;
-  if (l.teacher) h += 44;
-  if (l.time || l.area) h += 38;
-  if (l.location) h += 38;
-  if (l.instagram || l.phone) h += 36;
-  return h + 26 + 20;
+  x.font = "700 34px Amiri, serif";
+  const cardW = S - 120;
+  const titleLines = Math.min(2, wrapLines(x, l.title || "", cardW - 88).length || 1);
+  let h = 48 + titleLines * 40;
+  if (l.teacher) h += 34;
+  if (l.time || l.area || l.location) h += 32; // time · area · location on one line
+  if (l.instagram || l.phone) h += 28;
+  return h + 30;
 }
 function drawScheduleRow(x, l, top, S) {
   const women = genderOf(l) === "نساء";
   const accent = women ? "#b58d88" : "#5a7a8a";
   const tint = women ? "#fbf1f3" : "#eef4fa";
-  const cardX = 70, cardW = S - 140;
-  const slot = rowHeight(x, l, S) - 20;
-  const xR = cardX + cardW - 42, xL = cardX + 42, maxW = cardW - 100;
-  x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 28); x.fill();
-  x.fillStyle = accent; roundRectPath(x, cardX + cardW - 14, top + 20, 8, slot - 40, 4); x.fill();
+  const cardX = 60, cardW = S - 120;
+  const slot = rowHeight(x, l, S) - 16;
+  const xR = cardX + cardW - 34, xL = cardX + 34, maxW = cardW - 88;
+  x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 24); x.fill();
+  x.fillStyle = accent; roundRectPath(x, cardX + cardW - 12, top + 14, 7, slot - 28, 4); x.fill();
   x.direction = "rtl";
   // badges: gender first, then type(s) (top-left)
   let px = xL;
@@ -286,24 +285,23 @@ function drawScheduleRow(x, l, top, S) {
     badges.push({ t: tp, bg: online ? "#dbe7f0" : "#e2ece7", fg: online ? "#3f5f70" : "#3e5a4e" });
   }
   for (const b of badges) {
-    x.font = "700 25px Tajawal, sans-serif";
-    const w = x.measureText(b.t).width + 36;
-    x.fillStyle = b.bg; roundRectPath(x, px, top + 24, w, 42, 21); x.fill();
-    x.fillStyle = b.fg; x.textAlign = "center"; x.fillText(b.t, px + w / 2, top + 52);
-    px += w + 12;
+    x.font = "700 22px Tajawal, sans-serif";
+    const w = x.measureText(b.t).width + 28;
+    x.fillStyle = b.bg; roundRectPath(x, px, top + 16, w, 34, 17); x.fill();
+    x.fillStyle = b.fg; x.textAlign = "center"; x.fillText(b.t, px + w / 2, top + 39);
+    px += w + 10;
   }
   // title + teacher + info (right-aligned, truncated to fit)
   x.textAlign = "right";
-  x.fillStyle = "#1B3B2B"; x.font = "700 40px Amiri, serif";
+  x.fillStyle = "#1B3B2B"; x.font = "700 34px Amiri, serif";
   const lines = wrapLines(x, l.title || "", maxW).slice(0, 2);
-  let y = top + 84;
-  for (const ln of lines) { x.fillText(ln, xR, y + 38); y += 50; }
-  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 32px Tajawal, sans-serif"; x.fillText(fit(x, `مع ${l.teacher}`, maxW), xR, y + 34); y += 44; }
-  const info = [l.time, l.area].filter(Boolean).join("  ·  ");
-  if (info) { x.fillStyle = "#475569"; x.font = "400 30px Tajawal, sans-serif"; x.fillText(fit(x, info, maxW), xR, y + 30); y += 38; }
-  if (l.location) { x.fillStyle = "#64748b"; x.font = "400 29px Tajawal, sans-serif"; x.fillText(fit(x, l.location, maxW), xR, y + 30); y += 38; }
+  let y = top + 52;
+  for (const ln of lines) { x.fillText(ln, xR, y + 32); y += 40; }
+  if (l.teacher) { x.fillStyle = "#4F7263"; x.font = "600 27px Tajawal, sans-serif"; x.fillText(fit(x, `مع ${l.teacher}`, maxW), xR, y + 26); y += 34; }
+  const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
+  if (info) { x.fillStyle = "#475569"; x.font = "400 26px Tajawal, sans-serif"; x.fillText(fit(x, info, maxW), xR, y + 22); y += 32; }
   const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join("  ·  ");
-  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 27px Tajawal, sans-serif"; x.fillText(fit(x, contact, maxW), xR, y + 26); }
+  if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 24px Tajawal, sans-serif"; x.fillText(fit(x, contact, maxW), xR, y + 20); }
 }
 function scheduleDate(day, list) {
   const dated = (list || []).find((l) => l.lesson_date && l.day === day && !l.is_recurring);
@@ -314,17 +312,23 @@ function scheduleDate(day, list) {
 }
 function drawScheduleHeader(x, day, dateObj, S) {
   x.fillStyle = "#FDFBF7"; x.fillRect(0, 0, S, 1920);
-  x.fillStyle = "#1B3B2B"; x.fillRect(0, 0, S, 214);
+  x.fillStyle = "#1B3B2B"; x.fillRect(0, 0, S, 188);
   x.textAlign = "center"; x.direction = "rtl";
-  x.fillStyle = "#a8c3b4"; x.font = "500 30px Tajawal, sans-serif"; x.fillText("روضة · مجالس ودروس الذكر", S / 2, 62);
-  x.fillStyle = "#FDFBF7"; x.font = "700 54px Tajawal, sans-serif"; x.fillText(day, S / 2, 128);
+  x.fillStyle = "#a8c3b4"; x.font = "500 28px Tajawal, sans-serif"; x.fillText("روضة · مجالس ودروس الذكر", S / 2, 54);
+  x.fillStyle = "#FDFBF7"; x.font = "700 50px Tajawal, sans-serif"; x.fillText(day, S / 2, 114);
   let sub = "";
   try {
     const g = new Intl.DateTimeFormat("ar", { day: "numeric", month: "long" }).format(dateObj);
     const h = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long" }).format(dateObj);
     sub = `${g} · ${h}`;
   } catch { /* ignore */ }
-  if (sub) { x.fillStyle = "#c9dcd0"; x.font = "500 32px Tajawal, sans-serif"; x.fillText(sub, S / 2, 178); }
+  if (sub) { x.fillStyle = "#c9dcd0"; x.font = "500 30px Tajawal, sans-serif"; x.fillText(sub, S / 2, 158); }
+  // Hadith of Rawdah («the gardens of Paradise») on the cream band below.
+  x.fillStyle = "#1B3B2B"; x.font = "700 33px Amiri, serif";
+  x.fillText("«إذا مَرَرْتُم برياضِ الجنةِ فارْتَعُوا»", S / 2, 252);
+  x.fillStyle = "#6f8d7f"; x.font = "500 24px Tajawal, sans-serif";
+  x.fillText("قيل: وما رياضُ الجنة؟ قال: «حِلَقُ الذِّكْر» — رواه الترمذي", S / 2, 294);
+  x.strokeStyle = "#e4dbd3"; x.lineWidth = 2; x.beginPath(); x.moveTo(150, 326); x.lineTo(S - 150, 326); x.stroke();
 }
 function drawScheduleFooter(x, S, page, total) {
   const H = 1920;
@@ -335,7 +339,7 @@ function drawScheduleFooter(x, S, page, total) {
 }
 async function shareScheduleImage(day, list) {
   try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch { /* ignore */ }
-  const S = 1080, H = 1920, START = 252, MAXY = H - 180;
+  const S = 1080, H = 1920, START = 356, MAXY = H - 170;
   const dateObj = scheduleDate(day, list);
   const m = document.createElement("canvas").getContext("2d");
   const pages = []; let cur = []; let y = START;
