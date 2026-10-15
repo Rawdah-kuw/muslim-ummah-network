@@ -520,14 +520,24 @@ function Card({ l, showDay, lang = "ar" }) {
   const women = genderOf(l) === "نساء";
   const maps = l.location ? `https://maps.google.com/?q=${encodeURIComponent((l.location || "") + " " + (l.area || ""))}` : null;
   const wa = l.phone ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}` : null;
+  // Normalize the Telegram value so a bare handle (e.g. "umabdulkarim" or
+  // "@umabdulkarim" or "t.me/...") becomes a full https link — otherwise it
+  // resolves relative to the site and 404s.
+  const tg = (() => {
+    const v = l.telegram_link ? String(l.telegram_link).trim() : "";
+    if (!v) return null;
+    if (/^https?:\/\//i.test(v)) return v;
+    if (/^t\.me\//i.test(v)) return `https://${v}`;
+    return `https://t.me/${v.replace(/^@/, "")}`;
+  })();
   // When no Zoom link is set, send people straight to the organizer (da‘iyah /
   // sponsor) to request it — a ready WhatsApp message — instead of a channel
   // where the link is hard to find. Falls back to Instagram, then the group.
   const askMsg = `السلام عليكم، أرجو تزويدي برابط زوم لدرس «${l.title || "الدرس"}»${l.day ? ` (${l.day}${l.time ? " " + l.time : ""})` : ""}. جزاكم الله خيرًا.`;
   const askLink = l.phone
     ? `https://wa.me/965${String(l.phone).replace(/\D/g, "")}?text=${encodeURIComponent(askMsg)}`
-    : l.telegram_link
-    ? l.telegram_link
+    : tg
+    ? tg
     : l.instagram
     ? `https://instagram.com/${l.instagram}`
     : l.channel_link || GROUP_LINK;
@@ -598,8 +608,8 @@ function Card({ l, showDay, lang = "ar" }) {
               <Instagram size={15} /> @{l.instagram}
             </a>
           )}
-          {l.telegram_link && (
-            <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={l.telegram_link} target="_blank" rel="noopener noreferrer">
+          {tg && (
+            <a className={`${btn} border border-pearl-300 text-slate-500 bg-white hover:bg-pearl-100`} href={tg} target="_blank" rel="noopener noreferrer">
               <Send size={15} /> تيليجرام
             </a>
           )}
