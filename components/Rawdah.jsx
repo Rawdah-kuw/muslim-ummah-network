@@ -260,12 +260,15 @@ function fit(x, text, maxW) {
 // Two-column card: title+teacher on the right, badges + time/place + contact on
 // the left — so cards are shorter and more lessons fit per image.
 function rowHeight(x, l, S) {
-  x.font = "700 34px Amiri, serif";
   const cardW = S - 120;
-  const rightMaxW = Math.round(cardW * 0.55);
+  const rightMaxW = Math.round(cardW * 0.54), leftMaxW = Math.round(cardW * 0.42);
+  x.font = "700 34px Amiri, serif";
   const titleLines = Math.min(2, wrapLines(x, l.title || "", rightMaxW).length || 1);
   const rightH = titleLines * 40 + (l.teacher ? 32 : 0);
-  const leftH = 34 + ((l.time || l.area || l.location) ? 30 : 0) + ((l.instagram || l.phone) ? 28 : 0);
+  x.font = "400 25px Tajawal, sans-serif";
+  const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
+  const infoN = info ? Math.min(2, wrapLines(x, info, leftMaxW).length) : 0; // place name wraps instead of truncating
+  const leftH = 34 + infoN * 30 + ((l.instagram || l.phone) ? 28 : 0);
   return 40 + Math.max(rightH, leftH) + 24;
 }
 function drawScheduleRow(x, l, top, S) {
@@ -274,12 +277,13 @@ function drawScheduleRow(x, l, top, S) {
   const tint = women ? "#fbf1f3" : "#eef4fa";
   const cardX = 60, cardW = S - 120;
   const slot = rowHeight(x, l, S) - 16;
-  const rightMaxW = Math.round(cardW * 0.55), leftMaxW = Math.round(cardW * 0.40);
+  const rightMaxW = Math.round(cardW * 0.54), leftMaxW = Math.round(cardW * 0.42);
   const xR = cardX + cardW - 34, xL = cardX + 34;
   x.fillStyle = tint; roundRectPath(x, cardX, top, cardW, slot, 22); x.fill();
   x.fillStyle = accent; roundRectPath(x, cardX + cardW - 12, top + 12, 7, slot - 24, 4); x.fill();
   x.direction = "rtl";
-  // LEFT column: badges (gender + types) on top, then time·area·location, then contact
+  // LEFT column: badges (gender + types) on top, then time·area·location (wraps to
+  // 2 lines so the mosque/place name is never truncated), then contact
   let px = xL;
   const badges = [{ t: women ? "للنساء" : "للجميع", bg: accent, fg: "#ffffff" }];
   for (const tp of (Array.isArray(l.types) ? l.types : [])) {
@@ -295,8 +299,10 @@ function drawScheduleRow(x, l, top, S) {
   }
   x.textAlign = "left";
   let ly = top + 72;
+  x.fillStyle = "#475569"; x.font = "400 25px Tajawal, sans-serif";
   const info = [l.time, l.area, l.location].filter(Boolean).join("  ·  ");
-  if (info) { x.fillStyle = "#475569"; x.font = "400 25px Tajawal, sans-serif"; x.fillText(fit(x, info, leftMaxW), xL, ly); ly += 30; }
+  const infoLines = info ? wrapLines(x, info, leftMaxW).slice(0, 2) : [];
+  for (const ln of infoLines) { x.fillText(ln, xL, ly); ly += 30; }
   const contact = [l.instagram ? `@${l.instagram}` : "", l.phone ? String(l.phone) : ""].filter(Boolean).join(" · ");
   if (contact) { x.fillStyle = "#94a3b8"; x.font = "400 23px Tajawal, sans-serif"; x.fillText(fit(x, contact, leftMaxW), xL, ly); }
   // RIGHT column: title (up to 2 lines) + teacher
