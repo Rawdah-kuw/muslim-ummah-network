@@ -101,7 +101,10 @@ export default function Adhkar({ t, lang }) {
     if (!root) return;
     const n = Math.max(0, Math.min(items.length - 1, idx));
     const el = root.querySelector(`[data-idx="${n}"]`);
-    if (el) el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", inline: "center", block: "nearest" });
+    if (el) {
+      el.scrollTop = 0; // show the dhikr from its top, not wherever it was left
+      el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", inline: "center", block: "nearest" });
+    }
   };
 
   // Track which card is centred as the user swipes.
@@ -135,22 +138,21 @@ export default function Adhkar({ t, lang }) {
   };
 
   return (
-    <section className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-10">
-      <h1 className="text-2xl font-bold text-pine-800 mb-1 text-center">{t.adhkarTitle}</h1>
-      <p className="text-sm text-slate-500 mb-2 text-center">{t.adhkarSubtitle}</p>
-      <p className="text-xs text-sage-600 mb-6 text-center">
+    <section className="max-w-3xl mx-auto px-4 md:px-6 py-4">
+      <h1 className="text-xl font-bold text-pine-800 mb-0.5 text-center">{t.adhkarTitle}</h1>
+      <p className="text-xs text-sage-600 mb-2.5 text-center">
         {ar
           ? "👆 اضغط الذكر للعدّ · اسحب للجنب أو استخدم السهم «‹» للذكر التالي"
           : "👆 Tap to count · swipe or use the arrow for the next dhikr"}
       </p>
 
-      <div className="flex justify-center gap-2 mb-6">
+      <div className="flex justify-center gap-2 mb-3">
         {["morning", "evening"].map((k) => (
           <button
             key={k}
             type="button"
             onClick={() => switchTab(k)}
-            className={`px-6 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            className={`px-6 py-1.5 rounded-xl text-sm font-semibold transition-colors ${
               tab === k ? "bg-sage-600 text-cream" : "bg-white border border-pearl-300 text-slate-500"
             }`}
           >
@@ -159,21 +161,23 @@ export default function Adhkar({ t, lang }) {
         ))}
       </div>
 
-      {/* Horizontal swipeable track with a peek of the neighbours + big arrows. */}
+      {/* Horizontal swipeable track — fixed height so every dhikr starts at its
+          top; long adhkar scroll vertically within their own card. */}
       <div className="relative">
         <div
           ref={trackRef}
           dir={ar ? "rtl" : "ltr"}
-          className="adhkar-track flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 md:mx-0 md:px-0"
+          className="adhkar-track flex items-stretch gap-4 overflow-x-auto snap-x snap-mandatory h-[64svh] -mx-4 px-4 md:mx-0 md:px-0"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {items.map((d, i) => (
             <div
               key={`${tab}-${i}`}
               data-idx={i}
-              className="snap-center shrink-0 w-[80%] sm:w-[76%] max-w-xl mx-auto flex"
+              className="adhkar-slide snap-center shrink-0 w-[80%] sm:w-[76%] max-w-xl mx-auto overflow-y-auto"
+              style={{ scrollbarWidth: "none" }}
             >
-              <div className="w-full">
+              <div className="pb-1">
                 <DhikrCard d={d} i={i} total={items.length} lang={lang} t={t} />
               </div>
             </div>
@@ -226,7 +230,8 @@ export default function Adhkar({ t, lang }) {
       </div>
 
       <style jsx>{`
-        .adhkar-track::-webkit-scrollbar {
+        .adhkar-track::-webkit-scrollbar,
+        .adhkar-slide::-webkit-scrollbar {
           display: none;
         }
         @keyframes adhkarNudge {
