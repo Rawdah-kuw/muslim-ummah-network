@@ -27,12 +27,19 @@ const time12 = (hhmm, ar) => {
   return `${h12}:${m} ${suffix}`;
 };
 
-// Current time-of-day in Kuwait (UTC+3), regardless of the viewer's timezone.
+// Current time-of-day in Kuwait (UTC+3), regardless of the viewer's timezone —
+// used for the Kuwait fallback (when location isn't available).
 const kuwaitNow = () => {
   const d = new Date();
   const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
   const kw = new Date(utcMs + 3 * 3600000);
   return { min: kw.getHours() * 60 + kw.getMinutes(), sec: kw.getSeconds() };
+};
+
+// Device-local time — correct for location-based times (the user is at that place).
+const localNow = () => {
+  const d = new Date();
+  return { min: d.getHours() * 60 + d.getMinutes(), sec: d.getSeconds() };
 };
 
 export default function Prayer({ t, lang }) {
@@ -43,26 +50,40 @@ export default function Prayer({ t, lang }) {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/prayer")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((j) => {
-        if (!alive) return;
-        if (j && j.error) setState("error");
-        else { setData(j); setState("ok"); }
-      })
-      .catch(() => alive && setState("error"));
+    const load = (url) =>
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((j) => {
+          if (!alive) return;
+          if (j && j.error) setState("error");
+          else { setData(j); setState("ok"); }
+        })
+        .catch(() => alive && setState("error"));
+
+    // Use the visitor's location when allowed; otherwise fall back to Kuwait.
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => load(`/api/prayer?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`),
+        () => load("/api/prayer"),
+        { timeout: 8000, maximumAge: 600000 }
+      );
+    } else {
+      load("/api/prayer");
+    }
     const id = setInterval(() => setTick((v) => v + 1), 1000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
   const title = ar ? "أوقات الصلاة" : "Prayer Times";
-  const cityLabel = ar ? "مدينة الكويت" : "Kuwait City";
+  const cityLabel = data?.byLocation
+    ? (ar ? `موقعك${data.city ? ` · ${data.city}` : ""}` : `Your location${data.city ? ` · ${data.city}` : ""}`)
+    : (ar ? "مدينة الكويت" : "Kuwait City");
 
   // Determine the next prayer (Sunrise excluded) and the remaining time.
   let nextKey = null;
   let remaining = null;
   if (data?.timings) {
-    const { min: nowMin, sec: nowSec } = kuwaitNow();
+    const { min: nowMin, sec: nowSec } = data.byLocation ? localNow() : kuwaitNow();
     for (const k of ORDER) {
       if (k === "Sunrise") continue;
       if (mins(data.timings[k]) > nowMin) { nextKey = k; break; }
@@ -143,9 +164,13 @@ export default function Prayer({ t, lang }) {
           </div>
 
           <p className="text-xs text-slate-400 mt-5 text-center">
-            {ar
-              ? "بتوقيت مدينة الكويت · طريقة الحساب: الكويت (المعهد الوطني للعلوم البحرية)"
-              : "Kuwait City time · Calculation method: Kuwait"}
+            {data.byLocation
+              ? (ar
+                  ? "حسب موقعك · طريقة الحساب: رابطة العالم الإسلامي"
+                  : "Based on your location · Method: Muslim World League")
+              : (ar
+                  ? "مدينة الكويت (افتراضياً) · فعِّل الموقع لعرض توقيت منطقتك"
+                  : "Kuwait City (default) · enable location for your area")}
           </p>
         </>
       )}
