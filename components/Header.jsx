@@ -48,17 +48,17 @@ export default function Header({ t, lang }) {
               className="flex items-center justify-center w-8 h-8 rounded-lg border border-sage-300 text-sage-600 hover:bg-sage-100 transition-colors">
               {dark ? <Sun size={14} /> : <Moon size={14} />}
             </button>
-            <Link href={`/${t.langTarget}`}
-              className="flex items-center gap-1 px-2.5 h-8 rounded-lg text-xs font-bold border border-sage-300 text-sage-600 hover:bg-sage-100 transition-colors">
-              <Languages size={13} /> {t.langBtn}
+            <Link href={`/${t.langTarget}`} aria-label={t.langBtn}
+              className="flex items-center gap-1 px-2.5 h-8 rounded-lg text-sm font-bold border border-sage-300 text-sage-600 hover:bg-sage-100 transition-colors">
+              <Languages size={14} /> {lang === "ar" ? "E" : "ع"}
             </Link>
           </div>
         </div>
-        {/* Compact nav row. */}
-        <nav className="flex flex-wrap items-center justify-center gap-0.5 mt-1.5" aria-label="Main">
+        {/* Compact nav — a balanced 3×2 grid on phones, inline on larger screens. */}
+        <nav className="grid grid-cols-3 gap-0.5 mt-1.5 sm:flex sm:flex-wrap sm:justify-center sm:items-center" aria-label="Main">
           {NAV_IDS.map((id) => (
             <Link key={id} href={navHref(lang, id)}
-              className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-900 hover:bg-pearl-100 transition-colors">
+              className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-center text-slate-500 hover:text-slate-900 hover:bg-pearl-100 transition-colors">
               {t.nav[id]}
             </Link>
           ))}

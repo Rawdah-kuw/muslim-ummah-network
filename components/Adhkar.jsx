@@ -30,11 +30,11 @@ function DhikrCard({ d, i, total, lang, t }) {
   return (
     <div
       onClick={countable ? tap : undefined}
-      className={`bg-white rounded-2xl border p-5 transition-colors ${
+      className={`bg-white rounded-2xl border px-4 pt-2.5 pb-4 transition-colors ${
         complete ? "border-sage-500 bg-sage-100" : "border-pearl-200"
       } ${countable ? "cursor-pointer select-none active:bg-pearl-50" : ""}`}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-semibold text-slate-400" dir="ltr">
           {i + 1} <span className="text-pearl-300">/</span> {total}
         </span>
