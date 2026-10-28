@@ -140,8 +140,8 @@ export default function Adhkar({ t, lang }) {
       <p className="text-sm text-slate-500 mb-2 text-center">{t.adhkarSubtitle}</p>
       <p className="text-xs text-sage-600 mb-6 text-center">
         {ar
-          ? "👆 اضغط على الذكر للعدّ · اسحب للجنب للتنقّل بين الأذكار"
-          : "👆 Tap a dhikr to count · swipe sideways to move between them"}
+          ? "👆 اضغط الذكر للعدّ · اسحب للجنب أو استخدم السهم «‹» للذكر التالي"
+          : "👆 Tap to count · swipe or use the arrow for the next dhikr"}
       </p>
 
       <div className="flex justify-center gap-2 mb-6">
@@ -159,53 +159,59 @@ export default function Adhkar({ t, lang }) {
         ))}
       </div>
 
-      {/* Horizontal swipeable track — one dhikr per view, snap to centre. */}
-      <div
-        ref={trackRef}
-        dir={ar ? "rtl" : "ltr"}
-        className="adhkar-track flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 md:mx-0 md:px-0"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {items.map((d, i) => (
-          <div
-            key={`${tab}-${i}`}
-            data-idx={i}
-            className="snap-center shrink-0 w-[90%] sm:w-[85%] max-w-xl mx-auto flex"
-          >
-            <div className="w-full">
-              <DhikrCard d={d} i={i} total={items.length} lang={lang} t={t} />
+      {/* Horizontal swipeable track with a peek of the neighbours + big arrows. */}
+      <div className="relative">
+        <div
+          ref={trackRef}
+          dir={ar ? "rtl" : "ltr"}
+          className="adhkar-track flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 md:mx-0 md:px-0"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {items.map((d, i) => (
+            <div
+              key={`${tab}-${i}`}
+              data-idx={i}
+              className="snap-center shrink-0 w-[80%] sm:w-[76%] max-w-xl mx-auto flex"
+            >
+              <div className="w-full">
+                <DhikrCard d={d} i={i} total={items.length} lang={lang} t={t} />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Navigation: arrows + position. Chevrons follow reading direction. */}
-      <div className="flex items-center justify-center gap-5 mt-5">
+        {/* Previous — large floating arrow on the reading-start side. */}
         <button
           type="button"
           onClick={() => go(cur - 1)}
           disabled={cur === 0}
           aria-label={ar ? "السابق" : "Previous"}
-          className="w-11 h-11 rounded-full border border-pearl-300 bg-white text-xl text-sage-700 flex items-center justify-center shadow-sm disabled:opacity-30 active:bg-pearl-50"
+          style={{ top: "50%", transform: "translateY(-50%)", [ar ? "right" : "left"]: 2 }}
+          className="absolute z-10 w-12 h-12 rounded-full border border-pearl-300 bg-white/95 text-2xl font-bold text-sage-700 flex items-center justify-center shadow-lg backdrop-blur-sm disabled:opacity-0 disabled:pointer-events-none active:scale-95 transition"
         >
           {ar ? "›" : "‹"}
         </button>
-        <span className="text-sm font-semibold text-slate-500 tabular-nums min-w-16 text-center" dir="ltr">
-          {cur + 1} / {items.length}
-        </span>
+
+        {/* Next — large floating arrow on the reading-forward side, nudges on load. */}
         <button
           type="button"
           onClick={() => go(cur + 1)}
           disabled={cur === items.length - 1}
-          aria-label={ar ? "التالي" : "Next"}
-          className="w-11 h-11 rounded-full border border-pearl-300 bg-white text-xl text-sage-700 flex items-center justify-center shadow-sm disabled:opacity-30 active:bg-pearl-50"
+          aria-label={ar ? "الذكر التالي" : "Next dhikr"}
+          style={{ top: "50%", transform: "translateY(-50%)", [ar ? "left" : "right"]: 2, ["--nd"]: ar ? "-7px" : "7px" }}
+          className="adhkar-next absolute z-10 w-12 h-12 rounded-full bg-sage-600 text-2xl font-bold text-cream flex items-center justify-center shadow-lg disabled:opacity-0 disabled:pointer-events-none active:scale-95 transition"
         >
           {ar ? "‹" : "›"}
         </button>
       </div>
 
-      {/* Dots */}
-      <div className="flex flex-wrap justify-center gap-1.5 mt-4" dir="ltr">
+      {/* Position indicator + dots */}
+      <div className="flex items-center justify-center gap-3 mt-4" dir="ltr">
+        <span className="text-sm font-semibold text-slate-500 tabular-nums">
+          {cur + 1} / {items.length}
+        </span>
+      </div>
+      <div className="flex flex-wrap justify-center gap-1.5 mt-2" dir="ltr">
         {items.map((_, i) => (
           <button
             key={i}
@@ -222,6 +228,13 @@ export default function Adhkar({ t, lang }) {
       <style jsx>{`
         .adhkar-track::-webkit-scrollbar {
           display: none;
+        }
+        @keyframes adhkarNudge {
+          0%, 100% { transform: translateY(-50%) translateX(0); }
+          50% { transform: translateY(-50%) translateX(var(--nd, -7px)); }
+        }
+        .adhkar-next:not(:disabled) {
+          animation: adhkarNudge 1.3s ease-in-out 0.6s 3;
         }
       `}</style>
     </section>
