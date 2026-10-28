@@ -32,7 +32,27 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   async redirects() {
-    return [{ source: "/", destination: "/ar", permanent: false }];
+    const PLAY = "https://play.google.com/store/apps/details?id=app.muslimummah.twa";
+    const WEB = "https://muslimummah.app/ar";
+    return [
+      { source: "/", destination: "/ar", permanent: false },
+      // /app smart link — device-aware, handled at the config/routing level
+      // (no route file, so no root-layout requirement to trip the build).
+      {
+        source: "/app",
+        has: [{ type: "header", key: "user-agent", value: ".*[Aa]ndroid.*" }],
+        destination: PLAY,
+        permanent: false,
+      },
+      {
+        source: "/app",
+        has: [{ type: "header", key: "user-agent", value: ".*(iPhone|iPad|iPod).*" }],
+        destination: WEB,
+        permanent: false,
+      },
+      // Desktop / anything else → the website.
+      { source: "/app", destination: WEB, permanent: false },
+    ];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
